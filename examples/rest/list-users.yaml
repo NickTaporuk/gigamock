@@ -1,0 +1,19 @@
+path: "/users"
+default
+scenarious:
+  - type: http
+    name: "default scenarios"
+    request:
+      method: GET
+    response:
+      body: |
+        {
+          "users": [
+            {
+              "name":"Luke Skywalker"
+            },
+            {
+              "name":"Han Solo"
+            },
+          ]
+        }
