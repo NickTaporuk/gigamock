@@ -1,7 +1,6 @@
 package fileWalkers
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -16,6 +15,7 @@ type DirWalk struct {
 	rootDirPath string
 }
 
+// SetRootPath
 func (dw *DirWalk) SetRootDirPath(rootDirPath string) {
 	dw.rootDirPath = rootDirPath
 }
@@ -25,18 +25,31 @@ func NewDirWalk(rootDirPath string) *DirWalk {
 }
 
 func (dw *DirWalk) Walk() (map[string]string, error) {
+
+	err := dw.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	filesTree := map[string]string{}
 	walkFunk := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		filesTree[info.Name()] = path + info.Name()
-		fmt.Println(path, info.Size())
+		filePath := path + info.Name()
+		filesTree[info.Name()] = filePath
+
+		ext, err := FileExtensionDetection(info)
+		if err != nil {
+			return nil
+		}
+
+		provider := fileProvi
 		return nil
 	}
 
-	err := filepath.Walk(dw.rootDirPath, walkFunk)
+	err = filepath.Walk(dw.rootDirPath, walkFunk)
 	if err != nil {
 		return nil, err
 	}

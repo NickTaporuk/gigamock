@@ -3,8 +3,9 @@ package app
 import (
 	"flag"
 	"fmt"
-	"github.com/NickTaporuk/gigamock/src/fileWalkers"
 	"path/filepath"
+
+	"github.com/NickTaporuk/gigamock/src/fileWalkers"
 )
 
 // Application is a root structure to init that app
@@ -49,7 +50,7 @@ func (a App) Run() error {
 		return err
 	}
 
-	fmt.Println("FILES ==>",files)
+	fmt.Println("FILES ==>", files)
 
 	return nil
 }

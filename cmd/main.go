@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/NickTaporuk/gigamock/src/app"
 	"log"
+
+	"github.com/NickTaporuk/gigamock/src/app"
 )
 
 func main() {
