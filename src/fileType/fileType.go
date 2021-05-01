@@ -1,4 +1,4 @@
-package fileWalkers
+package fileType
 
 import (
 	"errors"

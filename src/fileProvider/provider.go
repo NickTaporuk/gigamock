@@ -5,11 +5,11 @@ package fileProvider
 // that provides a possibility to use diff file parsing
 type FileProvider interface {
 	Init() error
-	Parse(filePath string) (GigaMockScenario, error)
+	Parse(filePath string) (*GigaMockScenario, error)
 }
 
 type GigaMockScenario struct {
-	Path      string
+	Path      string `yaml:"path"`
 	Scenarios []Scenario
 }
 
@@ -27,8 +27,8 @@ type GigaMockScenario struct {
 //            }
 //          }
 type Scenario struct {
-	Type    string
-	Name    string
+	Type    string `yaml:"type"`
+	Name    string `yaml:"name"`
 	Request struct {
 		Method string
 	}

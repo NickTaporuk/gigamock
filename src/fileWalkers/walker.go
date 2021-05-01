@@ -1,6 +1,9 @@
 package fileWalkers
 
 import (
+	"fmt"
+	"github.com/NickTaporuk/gigamock/src/fileProvider"
+	"github.com/NickTaporuk/gigamock/src/fileType"
 	"os"
 	"path/filepath"
 )
@@ -37,15 +40,21 @@ func (dw *DirWalk) Walk() (map[string]string, error) {
 			return err
 		}
 
-		filePath := path + info.Name()
+		filePath := path
 		filesTree[info.Name()] = filePath
 
-		ext, err := FileExtensionDetection(info)
+		ext, err := fileType.FileExtensionDetection(info)
 		if err != nil {
 			return nil
 		}
 
-		provider := fileProvi
+		provider, err := fileProvider.Factory(ext)
+		if err != nil {
+			return err
+		}
+		scenario, err := provider.Parse(filePath)
+
+		fmt.Printf("PATH ==>%v", scenario.Path)
 		return nil
 	}
 
