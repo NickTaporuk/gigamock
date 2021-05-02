@@ -39,9 +39,10 @@ func (a App) Run() error {
 	serverIP := flag.String("server-ip", "0.0.0.0", "Definition server IP")
 	serverPort := flag.Int("server-port", 7777, "Definition server Port")
 	dirPath := flag.String("dir-path", path, "Mocks config folder")
+	loggerLevel := flag.String("logger-level", "DEBUG", "logger level")
 	flag.Parse()
 
-	fmt.Println(serverIP, serverPort, dirPath)
+	fmt.Println(serverIP, serverPort, dirPath, loggerLevel)
 
 	filesWalker := fileWalkers.NewDirWalk(*dirPath)
 

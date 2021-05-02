@@ -1,15 +1,15 @@
 path: "/users/:userID"
+method: PUT
+type: http
+
 scenarious:
-  - type: http
-    name: "default scenarios"
+  - name: "default scenarios"
     request:
-      method: PUT
+
     response:
-      code: 200
-  - type: http
-    name: "error 500"
+      statusCode: 200
+  - name: "error 500"
     request:
-      method: PUT
     response:
-      code: 500
+      statusCode: 500
 

@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/NickTaporuk/gigamock/src/scenarios"
 )
 
 // YAMLProvider
@@ -20,8 +22,8 @@ func (Y YAMLProvider) Init() error {
 }
 
 // Parse
-func (Y YAMLProvider) Parse(filePath string) (*GigaMockScenario, error) {
-	scenario := &GigaMockScenario{}
+func (Y YAMLProvider) Parse(filePath string) (*scenarios.GigaMockScenario, error) {
+	scenario := &scenarios.GigaMockScenario{}
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return scenario, err
