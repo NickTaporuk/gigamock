@@ -3,6 +3,7 @@ package app
 import (
 	"flag"
 	"fmt"
+	"github.com/NickTaporuk/gigamock/src/server"
 	"path/filepath"
 
 	"github.com/NickTaporuk/gigamock/src/fileWalkers"
@@ -25,11 +26,7 @@ func (a App) Stop() error {
 	return nil
 }
 
-// server Ip
-// server port
-// scripts folder
-// config file path
-// root path for directory
+// Run
 func (a App) Run() error {
 	path, err := filepath.Abs("./config")
 	if err != nil {
@@ -37,7 +34,7 @@ func (a App) Run() error {
 	}
 
 	serverIP := flag.String("server-ip", "0.0.0.0", "Definition server IP")
-	serverPort := flag.Int("server-port", 7777, "Definition server Port")
+	serverPort := flag.String("server-port", ":7777", "Definition server Port")
 	dirPath := flag.String("dir-path", path, "Mocks config folder")
 	loggerLevel := flag.String("logger-level", "DEBUG", "logger level")
 	flag.Parse()
@@ -51,7 +48,11 @@ func (a App) Run() error {
 		return err
 	}
 
-	fmt.Println("FILES ==>", files)
+	fmt.Printf("FILES ==> %#v\n", files)
+
+	di := server.NewDispatcher(files)
+
+	di.Start(*serverIP+*serverPort, files)
 
 	return nil
 }

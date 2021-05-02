@@ -1,7 +1,6 @@
 package fileProvider
 
 import (
-	"fmt"
 	"io/ioutil"
 
 	"gopkg.in/yaml.v3"
@@ -28,7 +27,7 @@ func (Y YAMLProvider) Parse(filePath string) (*scenarios.GigaMockScenario, error
 	if err != nil {
 		return scenario, err
 	}
-	fmt.Println("YAML FILE==>", string(yamlFile))
+	//fmt.Println("YAML FILE==>", string(yamlFile))
 	err = yaml.Unmarshal(yamlFile, &scenario)
 	if err != nil {
 		return scenario, err

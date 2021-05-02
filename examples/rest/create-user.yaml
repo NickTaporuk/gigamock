@@ -11,11 +11,15 @@ scenarious:
         - type: "Authorization"
           value: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
       queryStringParameters:
-        param1: "test1"
-        param2: "test2"
+        - name: "param1"
+          value: "test1"
+        - name: "param1"
+          value: "test1"
       cookies:
-        param1: "test1"
-        param2: "test2"
+        - name: "param1"
+          value: "test1"
+        - name: "param1"
+          value: "test1"
 
     response:
       statusCode: 201
@@ -37,6 +41,7 @@ scenarious:
 
 webHook:
   url: "http://0.0.0.0:9009"
+  type: http
   headers:
     - type: "Content-Type"
       value: "application/json"
