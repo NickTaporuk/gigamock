@@ -1,0 +1,16 @@
+path: "/users/:userID"
+        default
+scenarious:
+  - type: http
+    name: "default scenarios"
+    request:
+      method: DELETE
+    response:
+      code: 200
+  - type: http
+    name: "error 500"
+    request:
+      method: DELETE
+    response:
+      code: 500
+

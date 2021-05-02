@@ -41,7 +41,6 @@ func (dw *DirWalk) Walk() (map[string]string, error) {
 		}
 
 		filePath := path
-		filesTree[info.Name()] = filePath
 
 		ext, err := fileType.FileExtensionDetection(info)
 		if err != nil {
@@ -54,7 +53,9 @@ func (dw *DirWalk) Walk() (map[string]string, error) {
 		}
 		scenario, err := provider.Parse(filePath)
 
-		fmt.Printf("PATH ==>%v", scenario.Path)
+		filesTree[scenario.Path+"|"+scenario.Method] = filePath
+
+		fmt.Printf("PATH ==>%v, %v", scenario.Path, scenario.Scenarios)
 		return nil
 	}
 

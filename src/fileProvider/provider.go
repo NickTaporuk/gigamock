@@ -9,30 +9,26 @@ type FileProvider interface {
 }
 
 type GigaMockScenario struct {
-	Path      string `yaml:"path"`
-	Scenarios []Scenario
+	Path   string `yaml:"path"`
+	Type   string `yaml:"type"`
+	Name   string `yaml:"name"`
+	Method string `yaml:"method"`
+
+	Scenarios []Scenario `yaml:"scenarios"`
 }
 
-//     - type: http
-//      name: "default scenareous"
-//      request:
-//        method: GET
-//      response:
-//        body: |
-//          {
-//            "settings": {
-//              "patching": {
-//                "deployment_rules": "do_not_wait_for_approval",
-//               }
-//            }
-//          }
+// Scenario
 type Scenario struct {
-	Type    string `yaml:"type"`
-	Name    string `yaml:"name"`
-	Request struct {
-		Method string
-	}
-	Response struct {
-		Body string
-	}
+	Request  ScenarioRequest  `yaml:"request"`
+	Response ScenarioResponse `yaml:"response"`
+}
+
+// ScenarioRequest
+type ScenarioRequest struct {
+	Method string `yaml:"method"`
+}
+
+// ScenarioResponse
+type ScenarioResponse struct {
+	Body string `yaml:"body"`
 }

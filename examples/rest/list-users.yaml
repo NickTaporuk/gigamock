@@ -1,5 +1,4 @@
 path: "/users"
-default
 scenarious:
   - type: http
     name: "default scenarios"
