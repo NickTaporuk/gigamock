@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/NickTaporuk/gigamock/src/fileProvider"
 	"github.com/NickTaporuk/gigamock/src/fileType"
+	urlrouter "github.com/azer/url-router"
 	"os"
 	"path/filepath"
 )
@@ -27,14 +28,22 @@ func NewDirWalk(rootDirPath string) *DirWalk {
 	return &DirWalk{rootDirPath: rootDirPath}
 }
 
-func (dw *DirWalk) Walk() (map[string]string, error) {
+type IndexedData struct {
+	FilePath       string
+	ScenarioNumber int
+}
+
+type ListIndexedData []IndexedData
+
+func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error) {
 
 	err := dw.Validate()
 	if err != nil {
 		return nil, err
 	}
 
-	filesTree := map[string]string{}
+	filesTree := map[string]IndexedData{}
+
 	walkFunk := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -42,7 +51,7 @@ func (dw *DirWalk) Walk() (map[string]string, error) {
 
 		filePath := path
 
-		ext, err := fileType.FileExtensionDetection(info)
+		ext, err := fileType.FileExtensionDetection(info.Name())
 		if err != nil {
 			return nil
 		}
@@ -53,7 +62,9 @@ func (dw *DirWalk) Walk() (map[string]string, error) {
 		}
 		scenario, err := provider.Parse(filePath)
 
-		filesTree[scenario.Path+"|"+scenario.Method] = filePath
+		router.Add(scenario.Path)
+
+		filesTree[scenario.Path+"|"+scenario.Method] = IndexedData{FilePath: filePath}
 
 		fmt.Printf("PATH ==>%v, %v", scenario.Path, scenario.Scenarios)
 		return nil

@@ -2,12 +2,12 @@ path: "/users/:userID"
 method: PUT
 type: http
 
-scenarious:
+scenarios:
   - name: "default scenarios"
     request:
 
     response:
-      statusCode: 200
+      statusCode: 201
   - name: "error 500"
     request:
     response:

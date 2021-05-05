@@ -1,0 +1,14 @@
+path: "/asset/v1/partners/:partnerID/endpoints/:endpointID/settings"
+method: GET
+type: http
+scenarios:
+  - name: "default scenario"
+    request:
+    response:
+      statusCode: 200
+      body: "{\"timeZone\":\"Europe/Kyiv\"}"
+
+  - name: "error 500"
+    request:
+    response:
+      statusCode: 500

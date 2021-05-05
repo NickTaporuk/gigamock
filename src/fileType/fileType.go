@@ -2,7 +2,6 @@ package fileType
 
 import (
 	"errors"
-	"os"
 	"path/filepath"
 )
 
@@ -16,9 +15,9 @@ const (
 )
 
 // FileExtensionDetection
-func FileExtensionDetection(fileInfo os.FileInfo) (string, error) {
+func FileExtensionDetection(filePath string) (string, error) {
 
-	ext := filepath.Ext(fileInfo.Name())
+	ext := filepath.Ext(filePath)
 
 	switch ext {
 	case FileExtensionYML:

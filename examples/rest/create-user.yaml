@@ -1,36 +1,25 @@
 path: "/users/:userID"
 method: POST
 type: http
-
-scenarious:
+scenarios:
   - name: "default scenario"
     request:
       headers:
-        - type: "Content-Type"
-          value: "application/json"
-        - type: "Authorization"
-          value: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        Content-Type: "application/json"
+        Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
       queryStringParameters:
-        - name: "param1"
-          value: "test1"
-        - name: "param1"
-          value: "test1"
+        "param1": "test1"
       cookies:
-        - name: "param1"
-          value: "test1"
-        - name: "param1"
-          value: "test1"
+        param1: "test1"
 
     response:
       statusCode: 201
       headers:
-        - type: "Content-Type"
-          value: "application/json"
-        - type: "Authorization"
-          value: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        Content-Type: "application/json"
+      queryStringParameters:
+        param1: "test1"
       cookies:
         param1: "test1"
-        param2: "test2"
       body: ""
     delay: 100
 
@@ -38,26 +27,17 @@ scenarious:
     request:
     response:
       statusCode: 500
+      body: ""
 
 webHook:
   url: "http://0.0.0.0:9009"
   type: http
   headers:
-    - type: "Content-Type"
-      value: "application/json"
-    - type: "Authorization"
-      value: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    Content-Type: "application/json"
+    Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
   queryStringParameters:
     param1: "test1"
-    param2: "test2"
   cookies:
     param1: "test1"
-    param2: "test2"
   method: "POST"
   delay: 200
-
-control:
-  requiredState:
-    - "not_started"
-    - "deleted"
-  newState: "created"

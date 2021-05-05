@@ -3,46 +3,111 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/NickTaporuk/gigamock/src/fileWalkers"
+	"github.com/NickTaporuk/gigamock/src/handlers/inMemory"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
-	"github.com/ryanuber/go-glob"
+	urlrouter "github.com/azer/url-router"
+
+	"github.com/NickTaporuk/gigamock/src/fileProvider"
+	"github.com/NickTaporuk/gigamock/src/fileType"
+	"github.com/NickTaporuk/gigamock/src/store"
 )
 
+// Dispatcher
 type Dispatcher struct {
-	indexedFiles map[string]string
+	indexedFiles map[string]fileWalkers.IndexedData
+	router       *urlrouter.Router
 }
 
-func NewDispatcher(indexedFiles map[string]string) *Dispatcher {
-	return &Dispatcher{indexedFiles: indexedFiles}
+// NewDispatcher is the constructor
+func NewDispatcher(
+	indexedFiles map[string]fileWalkers.IndexedData,
+	router *urlrouter.Router,
+	inMemoryStore *store.InMemoryStore,
+) *Dispatcher {
+	return &Dispatcher{
+		indexedFiles: indexedFiles,
+		router:       router,
+	}
 }
 
-func (di *Dispatcher) SetIndexedFiles(indexedFiles map[string]string) {
-	di.indexedFiles = indexedFiles
-}
+func (di *Dispatcher) inMemoryHandlers(w http.ResponseWriter, req *http.Request) (bool, error) {
 
-// RouteMatchings
-func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) bool {
-	found := false
-	for i, v := range di.indexedFiles {
-		splitedKey := strings.Split(i, "|")
-		fmt.Println("KEY=>", splitedKey, "VALUE=>", v)
-		if glob.Glob(splitedKey[0], req.URL.Path) && req.Method == splitedKey[1] {
-			w.Write([]byte("method:" + req.Method + ", route:" + req.URL.Path + ",KEY" + v))
-			found = true
+	if req.URL.Path == "/internal/v1/in-memory" {
+		h := inMemory.NewHandler(&di.indexedFiles)
+		switch req.Method {
+		case http.MethodPost:
+			h.AddRecord(w, req)
+			return true, nil
+		case http.MethodGet:
+			h.List(w, req)
+			return true, nil
 		}
 	}
 
-	if !found {
+	return false, nil
+}
+
+// RouteMatching
+func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) error {
+	matched, err := di.inMemoryHandlers(w, req)
+	if err != nil {
+		return err
+	}
+
+	if matched {
+		return nil
+	}
+
+	match := di.router.Match(req.URL.Path)
+
+	if v, ok := di.indexedFiles[match.Pattern+"|"+req.Method]; ok && match != nil {
+		fmt.Println("MATCH PATTERN VALUE=>", v, "PATTERN=>", match.Pattern)
+
+		ext, err := fileType.FileExtensionDetection(v.FilePath)
+		if err != nil {
+			return err
+		}
+
+		provider, err := fileProvider.Factory(ext)
+		if err != nil {
+			return err
+		}
+		scenario, err := provider.Parse(v.FilePath)
+		if err != nil {
+			return err
+		}
+
+		var body string
+		var statusCode int
+		if len(scenario.Scenarios) > 0 {
+			body = scenario.Scenarios[v.ScenarioNumber].Response.Body
+			if scenario.Scenarios[v.ScenarioNumber].Response.StatusCode > 0 {
+				statusCode = scenario.Scenarios[v.ScenarioNumber].Response.StatusCode
+				if len(scenario.Scenarios[v.ScenarioNumber].Response.Headers) > 0 {
+					for headerName, headerValue := range scenario.Scenarios[v.ScenarioNumber].Response.Headers {
+						w.Header().Add(headerName, headerValue)
+						fmt.Printf("HEADERS==>", v)
+					}
+				}
+			} else {
+				statusCode = http.StatusOK
+			}
+		}
+
+		w.WriteHeader(statusCode)
+		w.Write([]byte(body))
+	} else {
 		//	no pattern matched; send 404 response
 		http.NotFound(w, req)
 	}
 
-	return found
+	return nil
 }
 
 func (di *Dispatcher) TypeMatching(w http.ResponseWriter, req *http.Request) {
@@ -50,18 +115,20 @@ func (di *Dispatcher) TypeMatching(w http.ResponseWriter, req *http.Request) {
 }
 
 func (di *Dispatcher) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	fmt.Println(w, req.Method)
 
 	if req.URL.Path == "/favicon.ico" {
 		return
 	}
 	// TODO: should check path
-	// TODO: check type can be http or graphql, grpc
-	di.RouteMatching(w, req)
+	// TODO: check type can be http or graphql, grpc or kafka
+	err := di.RouteMatching(w, req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 //Start initialize the HTTP mock server
-func (di Dispatcher) Start(addr string, indexedFiles map[string]string) {
+func (di Dispatcher) Start(addr string) {
 	var wait time.Duration
 
 	srv := &http.Server{

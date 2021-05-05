@@ -2,7 +2,7 @@ path: "/users/:userID"
 method: DELETE
 type: http
 
-scenarious:
+scenarios:
   - type: http
     name: "default scenarios"
     request:

@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/NickTaporuk/gigamock/src/server"
+	"github.com/NickTaporuk/gigamock/src/store"
+	urlrouter "github.com/azer/url-router"
 	"path/filepath"
 
 	"github.com/NickTaporuk/gigamock/src/fileWalkers"
@@ -41,18 +43,23 @@ func (a App) Run() error {
 
 	fmt.Println(serverIP, serverPort, dirPath, loggerLevel)
 
+	// router is an instance of urlrouter to match urls with parameters
+	router := urlrouter.New()
+	//
+	inMemoryData := make(map[string]int, 0)
+	inMemoryStore := store.NewInMemoryStore(inMemoryData)
 	filesWalker := fileWalkers.NewDirWalk(*dirPath)
 
-	files, err := filesWalker.Walk()
+	files, err := filesWalker.Walk(router)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("FILES ==> %#v\n", files)
 
-	di := server.NewDispatcher(files)
+	di := server.NewDispatcher(files, router, inMemoryStore)
 
-	di.Start(*serverIP+*serverPort, files)
+	di.Start(*serverIP+*serverPort)
 
 	return nil
 }

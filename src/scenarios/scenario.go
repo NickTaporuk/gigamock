@@ -14,37 +14,31 @@ type GigaMockScenario struct {
 type Scenario struct {
 	Request  ScenarioRequest  `yaml:"request"`
 	Response ScenarioResponse `yaml:"response"`
-	Delay    uint             `yaml:"delay"`
+	Delay    uint             `yaml:"delay,omitempty"`
 	WebHook  WebHook
-	Control  Control
 }
 
 // ScenarioRequest
 type ScenarioRequest struct {
-	Headers               map[string]string `yaml:"headers"`
-	QueryStringParameters map[string]string `yaml:"queryStringParameters"`
-	Cookies               map[string]string `yaml:"cookies"`
+	Headers               map[string]string `yaml:"headers,omitempty"`
+	QueryStringParameters map[string]string `yaml:"queryStringParameters,omitempty"`
+	Cookies               map[string]string `yaml:"cookies,omitempty"`
 }
 
 // ScenarioResponse
 type ScenarioResponse struct {
-	Body       string            `yaml:"body"`
-	StatusCode uint              `yaml:"statusCode"`
-	Headers    map[string]string `yaml:"headers"`
-	Cookies    map[string]string `yaml:"cookies"`
+	Body       string            `yaml:"body,omitempty"`
+	StatusCode int               `yaml:"statusCode"`
+	Headers    map[string]string `yaml:"headers,omitempty"`
+	Cookies    map[string]string `yaml:"cookies,omitempty"`
 }
 
 // WebHook
 type WebHook struct {
 	URL                   string            `yaml:"url"`
 	Method                string            `yaml:"method"`
-	Headers               map[string]string `yaml:"headers"`
-	QueryStringParameters map[string]string `yaml:"queryStringParameters"`
-	Cookies               map[string]string `yaml:"cookies"`
-	Type                  string            `yaml:"type"` // can be http or graphql or grpc
-}
-
-type Control struct {
-	RequiredState []string `yaml:"requiredState"`
-	NewState      string   `yaml:"newState"`
+	Headers               map[string]string `yaml:"headers,omitempty"`
+	QueryStringParameters map[string]string `yaml:"queryStringParameters,omitempty"`
+	Cookies               map[string]string `yaml:"cookies,omitempty"`
+	Type                  string            `yaml:"type"` // can be http or graphql or grpc and so one
 }
