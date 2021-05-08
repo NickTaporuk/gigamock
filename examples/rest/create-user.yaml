@@ -30,14 +30,18 @@ scenarios:
       body: ""
 
 webHook:
-  url: "http://0.0.0.0:9009"
+  path: "http:/localhost:5678/monitoring/v1/route/users"
+  method: POST
   type: http
-  headers:
-    Content-Type: "application/json"
-    Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-  queryStringParameters:
-    param1: "test1"
-  cookies:
-    param1: "test1"
-  method: "POST"
-  delay: 200
+  scenarios:
+    - name: "default scenario"
+      request:
+        headers:
+          Content-Type: "application/json"
+          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        queryStringParameters:
+          "param1": "test1"
+        cookies:
+          param1: "test1"
+
+      delay: 100

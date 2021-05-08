@@ -1,5 +1,5 @@
 {
-  "path": "/starwars/heroes",
+  "path": "/starwars/heroes/:heroID",
   "method": "GET",
   "type": "http",
   "scenarios": [
@@ -12,11 +12,11 @@
         }
       },
       "response": {
-        "statusCode": 201,
+        "statusCode": 200,
         "headers": {
           "Content-Type": "application/json"
         },
-        "body": "{\"heroes\":[{\"name\":\"Luke Skywalker\"},{\"name\":\"R2-D2\"},{\"name\":\"Yoda\"},{\"name\":\"C-3PO\"}]}"
+        "body": "{\"name\":\"R2-D2\"}"
       }
     },
     {

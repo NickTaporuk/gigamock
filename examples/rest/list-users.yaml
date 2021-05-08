@@ -6,6 +6,8 @@ scenarios:
   - name: "default scenarios"
     request:
     response:
+      headers:
+        Content-Type: "application/json"
       statusCode: 200
       body: |
         {
