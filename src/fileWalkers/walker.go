@@ -1,7 +1,6 @@
 package fileWalkers
 
 import (
-	"fmt"
 	"github.com/NickTaporuk/gigamock/src/fileProvider"
 	"github.com/NickTaporuk/gigamock/src/fileType"
 	urlrouter "github.com/azer/url-router"
@@ -60,13 +59,17 @@ func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error
 		if err != nil {
 			return err
 		}
-		scenario, err := provider.Parse(filePath)
+
+		scenario, err := provider.Unmarshal(filePath)
+		if err != nil {
+			return err
+		}
 
 		router.Add(scenario.Path)
 
 		filesTree[scenario.Path+"|"+scenario.Method] = IndexedData{FilePath: filePath}
 
-		fmt.Printf("PATH ==>%v, %v", scenario.Path, scenario.Scenarios)
+		//fmt.Printf("PATH ==>%v, %v", scenario.Path, scenario.Scenarios)
 		return nil
 	}
 

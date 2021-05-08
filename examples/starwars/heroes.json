@@ -1,0 +1,39 @@
+{
+  "path": "/starwars/heroes",
+  "method": "GET",
+  "type": "http",
+  "scenarios": [
+    {
+      "name": "default",
+      "request": {
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        }
+      },
+      "response": {
+        "statusCode": 201,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": "{\"heroes\":[{\"name\":\"Luke Skywalker\"},{\"name\":\"Luke Skywalker\"},{\"name\":\"Yoda\"}]}"
+      }
+    },
+    {
+      "name": "500 error",
+      "request": {
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        }
+      },
+      "response": {
+        "statusCode": 500,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": "{\"errors\":[{\"message\":\"Cannot query field \\\"nonexistentField\\\" on type \\\"Query\\\".\",\"locations\":[{\"line\":2,\"column\":3}],\"extensions\":{\"code\":\"GRAPHQL_VALIDATION_FAILED\",\"exception\":{\"stacktrace\":[\"GraphQLError: Cannot query field \\\"nonexistentField\\\" on type \\\"Query\\\".\",\"...additional lines...\"]}}}],\"data\":null}"
+      }
+    }
+  ]
+}

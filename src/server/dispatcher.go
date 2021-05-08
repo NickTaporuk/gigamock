@@ -3,8 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/NickTaporuk/gigamock/src/fileWalkers"
-	"github.com/NickTaporuk/gigamock/src/handlers/inMemory"
 	"log"
 	"net/http"
 	"os"
@@ -15,10 +13,13 @@ import (
 
 	"github.com/NickTaporuk/gigamock/src/fileProvider"
 	"github.com/NickTaporuk/gigamock/src/fileType"
+	"github.com/NickTaporuk/gigamock/src/fileWalkers"
+	"github.com/NickTaporuk/gigamock/src/handlers/inMemory"
+	"github.com/NickTaporuk/gigamock/src/scenarioType"
 	"github.com/NickTaporuk/gigamock/src/store"
 )
 
-// Dispatcher
+// Dispatcher internally maintains all part of the app
 type Dispatcher struct {
 	indexedFiles map[string]fileWalkers.IndexedData
 	router       *urlrouter.Router
@@ -36,6 +37,7 @@ func NewDispatcher(
 	}
 }
 
+// inMemoryHandlers
 func (di *Dispatcher) inMemoryHandlers(w http.ResponseWriter, req *http.Request) (bool, error) {
 
 	if req.URL.Path == "/internal/v1/in-memory" {
@@ -78,30 +80,25 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 		if err != nil {
 			return err
 		}
-		scenario, err := provider.Parse(v.FilePath)
+		// should to get type of a scenario
+		// can be http, graphql, grpc, kafka and so one
+		scenario, err := provider.Unmarshal(v.FilePath)
 		if err != nil {
 			return err
 		}
 
-		var body string
-		var statusCode int
-		if len(scenario.Scenarios) > 0 {
-			body = scenario.Scenarios[v.ScenarioNumber].Response.Body
-			if scenario.Scenarios[v.ScenarioNumber].Response.StatusCode > 0 {
-				statusCode = scenario.Scenarios[v.ScenarioNumber].Response.StatusCode
-				if len(scenario.Scenarios[v.ScenarioNumber].Response.Headers) > 0 {
-					for headerName, headerValue := range scenario.Scenarios[v.ScenarioNumber].Response.Headers {
-						w.Header().Add(headerName, headerValue)
-						fmt.Printf("HEADERS==>", v)
-					}
-				}
-			} else {
-				statusCode = http.StatusOK
-			}
+		println(scenario.Type)
+		scenarioTypeProvider, err := scenarioType.Factory(scenario.Type, w)
+		if err != nil {
+			return err
 		}
 
-		w.WriteHeader(statusCode)
-		w.Write([]byte(body))
+		err = scenarioTypeProvider.Unmarshal(scenario.Scenarios)
+		if err != nil {
+			return err
+		}
+
+		scenarioTypeProvider.Retrieve(v.ScenarioNumber)
 	} else {
 		//	no pattern matched; send 404 response
 		http.NotFound(w, req)

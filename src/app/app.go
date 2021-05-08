@@ -55,8 +55,6 @@ func (a App) Run() error {
 		return err
 	}
 
-	fmt.Printf("FILES ==> %#v\n", files)
-
 	di := server.NewDispatcher(files, router, inMemoryStore)
 
 	di.Start(*serverIP+*serverPort)

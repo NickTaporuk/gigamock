@@ -6,6 +6,5 @@ import "github.com/NickTaporuk/gigamock/src/scenarios"
 // case with different types of file providers like a yml ot json
 // that provides a possibility to use diff file parsing
 type FileProvider interface {
-	Init() error
-	Parse(filePath string) (*scenarios.GigaMockScenario, error)
+	Unmarshal(filePath string) (*scenarios.BaseGigaMockScenario, error)
 }
