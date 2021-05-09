@@ -1,11 +1,16 @@
 package fileWalkers
 
 import (
-	"github.com/NickTaporuk/gigamock/src/fileProvider"
-	"github.com/NickTaporuk/gigamock/src/fileType"
-	urlrouter "github.com/azer/url-router"
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+	"strings"
+
+	urlrouter "github.com/azer/url-router"
+
+	"github.com/NickTaporuk/gigamock/src/fileProvider"
+	"github.com/NickTaporuk/gigamock/src/fileType"
 )
 
 // DirWalker represents an interface to index and filter files inside particular dir
@@ -16,6 +21,7 @@ type DirWalker interface {
 
 type DirWalk struct {
 	rootDirPath string
+	logger      *logrus.Entry
 }
 
 // SetRootPath
@@ -23,8 +29,8 @@ func (dw *DirWalk) SetRootDirPath(rootDirPath string) {
 	dw.rootDirPath = rootDirPath
 }
 
-func NewDirWalk(rootDirPath string) *DirWalk {
-	return &DirWalk{rootDirPath: rootDirPath}
+func NewDirWalk(rootDirPath string, lgr *logrus.Entry) *DirWalk {
+	return &DirWalk{rootDirPath: rootDirPath, logger: lgr}
 }
 
 type IndexedData struct {
@@ -67,9 +73,9 @@ func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error
 
 		router.Add(scenario.Path)
 
-		filesTree[scenario.Path+"|"+scenario.Method] = IndexedData{FilePath: filePath}
+		filesTree[scenario.Path+"|"+strings.ToUpper(scenario.Method)] = IndexedData{FilePath: filePath}
+		dw.logger.Info(fmt.Sprintf("file %s for method %s was indexed", scenario.Path, scenario.Method))
 
-		//fmt.Printf("PATH ==>%v, %v", scenario.Path, scenario.Scenarios)
 		return nil
 	}
 
@@ -90,5 +96,6 @@ func (dw *DirWalk) Validate() error {
 
 	dw.SetRootDirPath(absPath)
 
+	//
 	return nil
 }

@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
 	"os"
@@ -16,24 +17,25 @@ import (
 	"github.com/NickTaporuk/gigamock/src/fileWalkers"
 	"github.com/NickTaporuk/gigamock/src/handlers/inMemory"
 	"github.com/NickTaporuk/gigamock/src/scenarioType"
-	"github.com/NickTaporuk/gigamock/src/store"
 )
 
 // Dispatcher internally maintains all part of the app
 type Dispatcher struct {
 	indexedFiles map[string]fileWalkers.IndexedData
 	router       *urlrouter.Router
+	logger       *logrus.Entry
 }
 
 // NewDispatcher is the constructor
 func NewDispatcher(
 	indexedFiles map[string]fileWalkers.IndexedData,
 	router *urlrouter.Router,
-	inMemoryStore *store.InMemoryStore,
+	lgr *logrus.Entry,
 ) *Dispatcher {
 	return &Dispatcher{
 		indexedFiles: indexedFiles,
 		router:       router,
+		logger:       lgr,
 	}
 }
 
@@ -69,23 +71,34 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 	match := di.router.Match(req.URL.Path)
 
 	if v, ok := di.indexedFiles[match.Pattern+"|"+req.Method]; ok && match != nil {
-		fmt.Println("MATCH PATTERN VALUE=>", v, "PATTERN=>", match.Pattern)
+		di.logger.Debug(
+			fmt.Sprintf(
+				"route %s for method %s is matched to file path %s, use scenario number %d",
+				match.Pattern,
+				req.Method,
+				v.FilePath,
+				v.ScenarioNumber,
+			))
 
 		ext, err := fileType.FileExtensionDetection(v.FilePath)
 		if err != nil {
 			return err
 		}
+		di.logger.Debug(fmt.Sprintf("file %s extension is %s", v.FilePath, ext))
 
 		provider, err := fileProvider.Factory(ext)
 		if err != nil {
 			return err
 		}
+		di.logger.Debug(fmt.Sprintf("file provider is %v extension is %s", provider, ext))
+
 		// should to get type of a scenario
 		// can be http, graphql, grpc, kafka and so one
 		scenario, err := provider.Unmarshal(v.FilePath)
 		if err != nil {
 			return err
 		}
+		di.logger.Debug(fmt.Sprintf("scenario data parsed, scenario data : %v", scenario))
 
 		println(scenario.Type)
 		scenarioTypeProvider, err := scenarioType.Factory(scenario.Type, w)
@@ -107,17 +120,12 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 	return nil
 }
 
-func (di *Dispatcher) TypeMatching(w http.ResponseWriter, req *http.Request) {
-
-}
-
 func (di *Dispatcher) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	if req.URL.Path == "/favicon.ico" {
 		return
 	}
-	// TODO: should check path
-	// TODO: check type can be http or graphql, grpc or kafka
+
 	err := di.RouteMatching(w, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

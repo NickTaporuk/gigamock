@@ -8,11 +8,11 @@ import (
 
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	marshaledData, err := json.Marshal(h.store)
-
+	writeResponseHeaderJson(w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	w.Header().Set("Conent-Type", "application/json")
 	w.Write(marshaledData)
+	w.WriteHeader(http.StatusOK)
 }

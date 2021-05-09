@@ -2,10 +2,11 @@ package app
 
 import (
 	"flag"
-	"fmt"
+	"github.com/NickTaporuk/gigamock/src/logger"
 	"github.com/NickTaporuk/gigamock/src/server"
-	"github.com/NickTaporuk/gigamock/src/store"
 	urlrouter "github.com/azer/url-router"
+	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/NickTaporuk/gigamock/src/fileWalkers"
@@ -39,25 +40,30 @@ func (a App) Run() error {
 	serverPort := flag.String("server-port", ":7777", "Definition server Port")
 	dirPath := flag.String("dir-path", path, "Mocks config folder")
 	loggerLevel := flag.String("logger-level", "DEBUG", "logger level")
+	loggerPrettyPrint := flag.Bool("logger-pretty-print", false, "logger level")
 	flag.Parse()
-
-	fmt.Println(serverIP, serverPort, dirPath, loggerLevel)
 
 	// router is an instance of urlrouter to match urls with parameters
 	router := urlrouter.New()
+	// init logger
+	writers := []io.Writer{os.Stdout}
+	localLogger := logger.NewLocalLogger(writers)
+	err = localLogger.Init(*loggerLevel, *loggerPrettyPrint)
+	if err != nil {
+		return err
+	}
+	lgr := localLogger.Logger()
 	//
-	inMemoryData := make(map[string]int, 0)
-	inMemoryStore := store.NewInMemoryStore(inMemoryData)
-	filesWalker := fileWalkers.NewDirWalk(*dirPath)
+	filesWalker := fileWalkers.NewDirWalk(*dirPath, lgr)
 
 	files, err := filesWalker.Walk(router)
 	if err != nil {
 		return err
 	}
 
-	di := server.NewDispatcher(files, router, inMemoryStore)
+	di := server.NewDispatcher(files, router, lgr)
 
-	di.Start(*serverIP+*serverPort)
+	di.Start(*serverIP + *serverPort)
 
 	return nil
 }

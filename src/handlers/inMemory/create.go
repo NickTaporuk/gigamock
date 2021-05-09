@@ -2,8 +2,15 @@ package inMemory
 
 import (
 	"encoding/json"
-	"github.com/NickTaporuk/gigamock/src/fileWalkers"
+	"errors"
 	"net/http"
+	"strings"
+
+	"github.com/NickTaporuk/gigamock/src/fileWalkers"
+)
+
+var (
+	errParticularRouteNotFound = errors.New("particular route isn't found")
 )
 
 // Request is used to parse request to insert new record to in-memory store
@@ -13,7 +20,14 @@ type Request struct {
 	Method         string `json:"method"`
 }
 
-// AddRecord is a hanler to create a new record or update existed one for in-memory store data
+// AddRecordResponse
+type AddRecordResponse struct {
+	Route  string `json:"route"`
+	Method string `json:"method"`
+	Error  string `json:"error, omitempty"`
+}
+
+// AddRecord is a handler to create a new record or update existed one for in-memory store data
 func (h *Handler) AddRecord(w http.ResponseWriter, r *http.Request) {
 
 	req := Request{}
@@ -24,14 +38,41 @@ func (h *Handler) AddRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := req.Path + "|" + req.Method
+	key := req.Path + "|" + strings.ToUpper(req.Method)
 	store := *h.store
 	if _, ok := store[key]; ok {
 		store[key] = fileWalkers.IndexedData{
 			FilePath:       store[key].FilePath,
 			ScenarioNumber: req.ScenarioNumber,
 		}
+	} else {
+		addRecordResponseError(w, req.Path, req.Method, http.StatusBadRequest, errParticularRouteNotFound)
 	}
 
+	writeResponseHeaderJson(w)
 	w.WriteHeader(http.StatusOK)
+}
+
+func addRecordResponseError(
+	w http.ResponseWriter,
+	route string,
+	method string,
+	httpStatus int,
+	err error,
+) {
+	resp := AddRecordResponse{
+		Route:  route,
+		Method: method,
+	}
+
+	resp.Error = err.Error()
+
+	marshaled, errParsing := json.Marshal(resp)
+	if errParsing != nil {
+		resp.Error = errParsing.Error()
+	}
+
+	writeResponseHeaderJson(w)
+	w.Write(marshaled)
+	w.WriteHeader(httpStatus)
 }
