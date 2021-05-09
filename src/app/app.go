@@ -2,14 +2,15 @@ package app
 
 import (
 	"flag"
-	"github.com/NickTaporuk/gigamock/src/logger"
-	"github.com/NickTaporuk/gigamock/src/server"
-	urlrouter "github.com/azer/url-router"
 	"io"
 	"os"
 	"path/filepath"
 
+	urlrouter "github.com/azer/url-router"
+
 	"github.com/NickTaporuk/gigamock/src/fileWalkers"
+	"github.com/NickTaporuk/gigamock/src/logger"
+	"github.com/NickTaporuk/gigamock/src/server"
 )
 
 // Application is a root structure to init that app
