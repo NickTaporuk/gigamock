@@ -21,7 +21,7 @@ scenarios:
       cookies:
         param1: "test1"
       body: ""
-    delay: 100
+    delay: 100ms
 
   - name: "error 500"
     request:

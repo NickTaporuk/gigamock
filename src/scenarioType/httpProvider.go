@@ -15,10 +15,6 @@ type HTTPTypeProvider struct {
 	scenarios scenarios.HTTPScenarios
 }
 
-func checkEachScenario(scenarious interface{}) error {
-	return nil
-}
-
 // Validate
 func (hp HTTPTypeProvider) Validate() error {
 	// need to validate request
