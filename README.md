@@ -23,6 +23,6 @@ Gigamock is a generic utility to be used as mocked server to provide a simplifie
 ###
 ### Scenarios
 ### Feature
-grpc api mock
-parse swagger api to mock scenarios
+    grpc api mock
+    parse swagger api to mock scenarios
 
