@@ -7,7 +7,17 @@ import (
 )
 
 // JSONProvider
-type JSONProvider struct {}
+type JSONProvider struct{}
+
+// NewJSONProvider
+func NewJSONProvider() *JSONProvider {
+	return &JSONProvider{}
+}
+
+//  Validate
+func (j *JSONProvider) Validate(scenario *scenarios.BaseGigaMockScenario) error {
+	return ValidateBaseFileStruct(scenario)
+}
 
 // Unmarshal
 func (j *JSONProvider) Unmarshal(filePath string) (*scenarios.BaseGigaMockScenario, error) {
@@ -22,10 +32,10 @@ func (j *JSONProvider) Unmarshal(filePath string) (*scenarios.BaseGigaMockScenar
 		return scenario, err
 	}
 
-	return scenario, nil
-}
+	err = j.Validate(scenario)
+	if err != nil {
+		return nil, err
+	}
 
-// NewJSONProvider
-func NewJSONProvider() *JSONProvider {
-	return &JSONProvider{}
+	return scenario, nil
 }

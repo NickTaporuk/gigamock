@@ -7,7 +7,7 @@ import (
 	"github.com/NickTaporuk/gigamock/src/scenarios"
 )
 
-func Factory(scenarioType string, w http.ResponseWriter) (TypeProvider, error) {
+func Factory(scenarioType string, w http.ResponseWriter, req *http.Request) (TypeProvider, error) {
 	switch scenarioType {
 	case scenarios.HTTPScenarioType:
 		return NewHTTPTypeProvider(w), nil

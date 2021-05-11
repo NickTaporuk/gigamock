@@ -1,18 +1,25 @@
 package fileProvider
 
 import (
-	"io/ioutil"
-
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
+	"io/ioutil"
+	"runtime/debug"
 
 	"github.com/NickTaporuk/gigamock/src/scenarios"
 )
 
 // YAMLProvider
-type YAMLProvider struct{}
+type YAMLProvider struct {
+	logger *logrus.Entry
+}
 
-func NewYAMLProvider() *YAMLProvider {
-	return &YAMLProvider{}
+func NewYAMLProvider(lgr *logrus.Entry) *YAMLProvider {
+	return &YAMLProvider{logger: lgr}
+}
+
+func (y *YAMLProvider) Validate(scenario *scenarios.BaseGigaMockScenario) error {
+	return ValidateBaseFileStruct(scenario)
 }
 
 // Parse
@@ -25,7 +32,23 @@ func (y YAMLProvider) Unmarshal(filePath string) (*scenarios.BaseGigaMockScenari
 
 	err = yaml.Unmarshal(yamlFile, &scenario)
 	if err != nil {
+		y.logger.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"scenario": scenario,
+				"trace":    string(debug.Stack()),
+			}).
+			Error("yaml unmarshal retrieved an error")
 		return scenario, err
+	}
+
+	err = y.Validate(scenario)
+	if err != nil {
+		y.logger.
+			WithError(err).
+			WithFields(logrus.Fields{"scenario": scenario}).
+			Error("yaml validation retrieved an error")
+		return nil, err
 	}
 
 	return scenario, nil

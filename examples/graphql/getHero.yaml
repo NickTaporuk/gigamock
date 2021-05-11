@@ -1,0 +1,30 @@
+path: "/ui/v1/graphQL"
+method: POST
+type: graphql
+scenarios:
+  - name: "default scenario"
+    request:
+      headers:
+        Content-Type: "application/json"
+        Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+      queryStringParameters:
+        "param1": "test1"
+      cookies:
+        param1: "test1"
+
+    response:
+      statusCode: 201
+      headers:
+        Content-Type: "application/json"
+      queryStringParameters:
+        param1: "test1"
+      cookies:
+        param1: "test1"
+      body: ""
+    delay: 100
+
+  - name: "error 500"
+    request:
+    response:
+      statusCode: 500
+      body: ""

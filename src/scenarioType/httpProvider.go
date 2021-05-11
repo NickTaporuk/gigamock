@@ -36,13 +36,14 @@ func (hp *HTTPTypeProvider) Retrieve(scenarioNumber int) {
 		body = hp.scenarios[scenarioNumber].Response.Body
 		if hp.scenarios[scenarioNumber].Response.StatusCode > 0 {
 			statusCode = hp.scenarios[scenarioNumber].Response.StatusCode
-			if len(hp.scenarios[scenarioNumber].Response.Headers) > 0 {
-				for headerName, headerValue := range hp.scenarios[scenarioNumber].Response.Headers {
-					hp.w.Header().Add(headerName, headerValue)
-				}
-			}
 		} else {
 			statusCode = http.StatusOK
+		}
+
+		if len(hp.scenarios[scenarioNumber].Response.Headers) > 0 {
+			for headerName, headerValue := range hp.scenarios[scenarioNumber].Response.Headers {
+				hp.w.Header().Add(headerName, headerValue)
+			}
 		}
 	}
 

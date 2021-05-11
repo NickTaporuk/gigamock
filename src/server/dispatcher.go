@@ -3,14 +3,14 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"time"
 
 	urlrouter "github.com/azer/url-router"
+	"github.com/sirupsen/logrus"
 
 	"github.com/NickTaporuk/gigamock/src/fileProvider"
 	"github.com/NickTaporuk/gigamock/src/fileType"
@@ -70,7 +70,7 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 
 	match := di.router.Match(req.URL.Path)
 
-	if v, ok := di.indexedFiles[match.Pattern+"|"+req.Method]; ok && match != nil {
+	if v, ok := di.indexedFiles[fileWalkers.PrepareImMemoryStoreKey(match.Pattern, req.Method)]; ok && match != nil {
 		di.logger.Debug(
 			fmt.Sprintf(
 				"route %s for method %s is matched to file path %s, use scenario number %d",
@@ -86,11 +86,11 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 		}
 		di.logger.Debug(fmt.Sprintf("file %s extension is %s", v.FilePath, ext))
 
-		provider, err := fileProvider.Factory(ext)
+		provider, err := fileProvider.Factory(ext, di.logger)
 		if err != nil {
 			return err
 		}
-		di.logger.Debug(fmt.Sprintf("file provider is %v extension is %s", provider, ext))
+		di.logger.Debug(fmt.Sprintf("file provider is %v, extension is %s", provider, ext))
 
 		// should to get type of a scenario
 		// can be http, graphql, grpc, kafka and so one
@@ -100,8 +100,7 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 		}
 		di.logger.Debug(fmt.Sprintf("scenario data parsed, scenario data : %v", scenario))
 
-		println(scenario.Type)
-		scenarioTypeProvider, err := scenarioType.Factory(scenario.Type, w)
+		scenarioTypeProvider, err := scenarioType.Factory(scenario.Type, w, req)
 		if err != nil {
 			return err
 		}
@@ -128,6 +127,15 @@ func (di *Dispatcher) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	err := di.RouteMatching(w, req)
 	if err != nil {
+		di.logger.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"trace":   string(debug.Stack()),
+				"request": req,
+				"method":  "di.RouteMatching",
+			}).
+			Error("route matching retrieved an error")
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -146,7 +154,13 @@ func (di Dispatcher) Start(addr string) {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			log.Println(err)
+			di.logger.
+				WithError(err).
+				WithFields(logrus.Fields{
+					"trace":   string(debug.Stack()),
+					"address": addr,
+				}).
+				Error("server retrieved an error")
 		}
 	}()
 
@@ -165,12 +179,13 @@ func (di Dispatcher) Start(addr string) {
 	// until the timeout deadline.
 	err := srv.Shutdown(ctx)
 	if err != nil {
-		log.Println("shutting down")
-		log.Fatal(err)
+		di.logger.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"trace": string(debug.Stack()),
+			}).Fatal("shutting down")
 	}
-	// Optionally, you could run srv.Shutdown in a goroutine and block on
-	// <-ctx.Done() if your application should wait for other services
-	// to finalize based on context cancellation.
-	log.Println("shutting down")
+
+	di.logger.Info("shutting down")
 	os.Exit(0)
 }

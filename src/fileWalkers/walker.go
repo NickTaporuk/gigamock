@@ -2,12 +2,10 @@ package fileWalkers
 
 import (
 	"fmt"
+	urlrouter "github.com/azer/url-router"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
-	"strings"
-
-	urlrouter "github.com/azer/url-router"
 
 	"github.com/NickTaporuk/gigamock/src/fileProvider"
 	"github.com/NickTaporuk/gigamock/src/fileType"
@@ -42,7 +40,12 @@ type ListIndexedData []IndexedData
 
 func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error) {
 
-	err := dw.Validate()
+	err := dw.prepareAbsolutePath()
+	if err != nil {
+		return nil, err
+	}
+
+	err = dw.Validate()
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +64,7 @@ func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error
 			return nil
 		}
 
-		provider, err := fileProvider.Factory(ext)
+		provider, err := fileProvider.Factory(ext, dw.logger)
 		if err != nil {
 			return err
 		}
@@ -73,7 +76,7 @@ func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error
 
 		router.Add(scenario.Path)
 
-		filesTree[scenario.Path+"|"+strings.ToUpper(scenario.Method)] = IndexedData{FilePath: filePath}
+		filesTree[PrepareImMemoryStoreKey(scenario.Path, scenario.Method)] = IndexedData{FilePath: filePath}
 		dw.logger.Info(fmt.Sprintf("file %s for method %s was indexed", scenario.Path, scenario.Method))
 
 		return nil
@@ -88,7 +91,7 @@ func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error
 }
 
 // Validate
-func (dw *DirWalk) Validate() error {
+func (dw *DirWalk) prepareAbsolutePath() error {
 	absPath, err := filepath.Abs(dw.rootDirPath)
 	if err != nil {
 		return err
@@ -96,6 +99,12 @@ func (dw *DirWalk) Validate() error {
 
 	dw.SetRootDirPath(absPath)
 
+	//
+	return nil
+}
+
+// Validate is fields checker to validate values
+func (dw *DirWalk) Validate() error {
 	//
 	return nil
 }

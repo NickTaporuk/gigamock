@@ -12,11 +12,11 @@
         }
       },
       "response": {
-        "statusCode": 201,
+        "statusCode": 200,
         "headers": {
           "Content-Type": "application/json"
         },
-        "body": "{\"heroes\":[{\"name\":\"Luke Skywalker\"},{\"name\":\"R2-D2\"},{\"name\":\"Yoda\"},{\"name\":\"C-3PO\"}]}"
+        "body": "{\"heroes\":[{\"name\":\"Luke Skywalker\"},{\"name\":\"R2-D2\"},{\"name\":\"Wilhuff Tarkin\"},{\"name\":\"Yoda\"},{\"name\":\"Obi-Wan Kenobi\"},{\"name\":\"LEIA ORGANA\"},{\"name\":\"CHEWBACCA\"},{\"name\":\"C-3PO\"}]}"
       }
     },
     {

@@ -3,10 +3,8 @@ package inMemory
 import (
 	"encoding/json"
 	"errors"
-	"net/http"
-	"strings"
-
 	"github.com/NickTaporuk/gigamock/src/fileWalkers"
+	"net/http"
 )
 
 var (
@@ -38,7 +36,7 @@ func (h *Handler) AddRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := req.Path + "|" + strings.ToUpper(req.Method)
+	key := fileWalkers.PrepareImMemoryStoreKey(req.Path, req.Method)
 	store := *h.store
 	if _, ok := store[key]; ok {
 		store[key] = fileWalkers.IndexedData{

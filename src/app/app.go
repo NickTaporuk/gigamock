@@ -2,9 +2,11 @@ package app
 
 import (
 	"flag"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 
 	urlrouter "github.com/azer/url-router"
 
@@ -59,6 +61,14 @@ func (a App) Run() error {
 
 	files, err := filesWalker.Walk(router)
 	if err != nil {
+		lgr.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"trace":   string(debug.Stack()),
+				"router": router,
+				"method": "filesWalker.Walk",
+			}).
+			Error("file walker retrieved an error")
 		return err
 	}
 
