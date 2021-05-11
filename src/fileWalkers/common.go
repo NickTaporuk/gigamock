@@ -8,7 +8,7 @@ const (
 	inMemoryKeySeparator = "|"
 )
 
-// PrepareImMemoryStoreKey
-func PrepareImMemoryStoreKey(path, method string) string {
+// PrepareInMemoryStoreKey
+func PrepareInMemoryStoreKey(path, method string) string {
 	return path + inMemoryKeySeparator + strings.ToUpper(method)
 }

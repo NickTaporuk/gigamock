@@ -1,7 +1,7 @@
 path: "/users"
 method: GET
 type: http
-
+description: "retrieve a list of active users"
 scenarios:
   - name: "default scenarios"
     request:

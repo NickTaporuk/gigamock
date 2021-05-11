@@ -18,7 +18,7 @@ func NewYAMLProvider(lgr *logrus.Entry) *YAMLProvider {
 	return &YAMLProvider{logger: lgr}
 }
 
-func (y *YAMLProvider) Validate(scenario *scenarios.BaseGigaMockScenario) error {
+func (y YAMLProvider) Validate(scenario scenarios.BaseGigaMockScenario) error {
 	return ValidateBaseFileStruct(scenario)
 }
 
@@ -42,7 +42,7 @@ func (y YAMLProvider) Unmarshal(filePath string) (*scenarios.BaseGigaMockScenari
 		return scenario, err
 	}
 
-	err = y.Validate(scenario)
+	err = y.Validate(*scenario)
 	if err != nil {
 		y.logger.
 			WithError(err).

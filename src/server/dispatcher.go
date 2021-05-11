@@ -70,7 +70,7 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 
 	match := di.router.Match(req.URL.Path)
 
-	if v, ok := di.indexedFiles[fileWalkers.PrepareImMemoryStoreKey(match.Pattern, req.Method)]; ok && match != nil {
+	if v, ok := di.indexedFiles[fileWalkers.PrepareInMemoryStoreKey(match.Pattern, req.Method)]; ok && match != nil {
 		di.logger.Debug(
 			fmt.Sprintf(
 				"route %s for method %s is matched to file path %s, use scenario number %d",
@@ -106,6 +106,11 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 		}
 
 		err = scenarioTypeProvider.Unmarshal(scenario.Scenarios)
+		if err != nil {
+			return err
+		}
+
+		err = scenarioTypeProvider.Validate()
 		if err != nil {
 			return err
 		}

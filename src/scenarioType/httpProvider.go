@@ -3,6 +3,7 @@ package scenarioType
 import (
 	"net/http"
 
+	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/NickTaporuk/gigamock/src/scenarios"
@@ -12,6 +13,30 @@ import (
 type HTTPTypeProvider struct {
 	w         http.ResponseWriter
 	scenarios scenarios.HTTPScenarios
+}
+
+func checkEachScenario(scenarious interface{}) error {
+	return nil
+}
+
+// Validate
+func (hp HTTPTypeProvider) Validate() error {
+	// need to validate request
+	// need to validate response
+	// validate delay
+	// validate webhook
+
+	err := validation.ValidateStruct(
+		&hp,
+		validation.Field(&hp.scenarios),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 // NewHTTPTypeProvider

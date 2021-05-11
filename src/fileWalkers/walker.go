@@ -2,10 +2,12 @@ package fileWalkers
 
 import (
 	"fmt"
-	urlrouter "github.com/azer/url-router"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+
+	urlrouter "github.com/azer/url-router"
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/sirupsen/logrus"
 
 	"github.com/NickTaporuk/gigamock/src/fileProvider"
 	"github.com/NickTaporuk/gigamock/src/fileType"
@@ -14,7 +16,7 @@ import (
 // DirWalker represents an interface to index and filter files inside particular dir
 type DirWalker interface {
 	Walk() (map[string]string, error)
-	Validate() error
+	validation.Validatable
 }
 
 type DirWalk struct {
@@ -76,8 +78,9 @@ func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error
 
 		router.Add(scenario.Path)
 
-		filesTree[PrepareImMemoryStoreKey(scenario.Path, scenario.Method)] = IndexedData{FilePath: filePath}
-		dw.logger.Info(fmt.Sprintf("file %s for method %s was indexed", scenario.Path, scenario.Method))
+		filesTree[PrepareInMemoryStoreKey(scenario.Path, scenario.Method)] = IndexedData{FilePath: filePath}
+
+		dw.logger.Info(fmt.Sprintf("file %s for path %s for method %s was indexed", info.Name(), scenario.Path, scenario.Method))
 
 		return nil
 	}
@@ -90,7 +93,7 @@ func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error
 	return filesTree, nil
 }
 
-// Validate
+// prepareAbsolutePath
 func (dw *DirWalk) prepareAbsolutePath() error {
 	absPath, err := filepath.Abs(dw.rootDirPath)
 	if err != nil {

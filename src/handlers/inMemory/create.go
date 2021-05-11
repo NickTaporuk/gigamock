@@ -36,7 +36,7 @@ func (h *Handler) AddRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := fileWalkers.PrepareImMemoryStoreKey(req.Path, req.Method)
+	key := fileWalkers.PrepareInMemoryStoreKey(req.Path, req.Method)
 	store := *h.store
 	if _, ok := store[key]; ok {
 		store[key] = fileWalkers.IndexedData{

@@ -11,7 +11,7 @@ func Factory(ext string, lgr *logrus.Entry) (FileProvider, error) {
 	case fileType.FileExtensionYAML:
 		return NewYAMLProvider(lgr), nil
 	case fileType.FileExtensionJSON:
-		return NewJSONProvider(), nil
+		return NewJSONProvider(lgr), nil
 	default:
 		return nil, errors.New("extension type is not found")
 	}

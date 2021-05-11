@@ -2,20 +2,24 @@ package fileProvider
 
 import (
 	"encoding/json"
-	"github.com/NickTaporuk/gigamock/src/scenarios"
 	"io/ioutil"
+
+	"github.com/NickTaporuk/gigamock/src/scenarios"
+	"github.com/sirupsen/logrus"
 )
 
 // JSONProvider
-type JSONProvider struct{}
+type JSONProvider struct {
+	logger *logrus.Entry
+}
 
 // NewJSONProvider
-func NewJSONProvider() *JSONProvider {
-	return &JSONProvider{}
+func NewJSONProvider(lgr *logrus.Entry) *JSONProvider {
+	return &JSONProvider{logger: lgr}
 }
 
 //  Validate
-func (j *JSONProvider) Validate(scenario *scenarios.BaseGigaMockScenario) error {
+func (j JSONProvider) Validate(scenario scenarios.BaseGigaMockScenario) error {
 	return ValidateBaseFileStruct(scenario)
 }
 
@@ -32,7 +36,7 @@ func (j *JSONProvider) Unmarshal(filePath string) (*scenarios.BaseGigaMockScenar
 		return scenario, err
 	}
 
-	err = j.Validate(scenario)
+	err = j.Validate(*scenario)
 	if err != nil {
 		return nil, err
 	}
