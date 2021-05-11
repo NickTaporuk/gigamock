@@ -1,5 +1,5 @@
 # gigamock
-this is a mocking HTTP requests package
+Gigamock is a generic utility to be used as mocked server to provide a simplified and consistent API over various network data sources such as http REST API or grpc or graphql services via mocking response.
 ## Conception
 ### Parse YML files
     example.yaml
