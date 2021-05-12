@@ -116,6 +116,37 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 		}
 
 		scenarioTypeProvider.Retrieve(v.ScenarioNumber)
+
+		// need to run webhook
+		if scenario.WebHook != nil {
+			go func() {
+				err = scenario.WebHook.Validate()
+				if err != nil {
+					di.logger.
+						WithError(err).
+						WithFields(logrus.Fields{
+							"scenario": scenario,
+							"method":   "dispatcher.RouteMatching",
+							"action":   "scenario.WebHook.Validate()",
+							"stack":    string(debug.Stack()),
+						}).Error("scenario.WebHook.Validate is retrieved an error")
+					return
+				}
+
+				err = scenario.WebHook.Run()
+				if err != nil {
+					di.logger.
+						WithError(err).
+						WithFields(logrus.Fields{
+							"scenario": scenario,
+							"method":   "dispatcher.RouteMatching",
+							"action":   "scenario.WebHook.Run()",
+							"stack":    string(debug.Stack()),
+						}).Error("scenario.WebHook.Run¬ is retrieved an error")
+					return
+				}
+			}()
+		}
 	} else {
 		//	no pattern matched; send 404 response
 		http.NotFound(w, req)

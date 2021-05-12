@@ -29,7 +29,7 @@ scenarios:
       statusCode: 500
       body: ""
 
-webHook:
+webhook:
   path: "http:/localhost:5678/monitoring/v1/route/users"
   method: POST
   type: http
@@ -43,5 +43,4 @@ webHook:
           "param1": "test1"
         cookies:
           param1: "test1"
-
-      delay: 100
+      delay: 100s

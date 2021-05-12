@@ -1,9 +1,9 @@
 package scenarios
 
 import (
-	"net/http"
-
 	validation "github.com/go-ozzo/ozzo-validation"
+
+	"github.com/NickTaporuk/gigamock/src/common"
 )
 
 // GigaMockHTTPScenario
@@ -16,7 +16,6 @@ type HTTPScenario struct {
 	Request  HTTPScenarioRequest  `yaml:"request"`
 	Response HTTPScenarioResponse `yaml:"response"`
 	Delay    string               `yaml:"delay,omitempty"`
-	WebHook  WebHook              `yaml:"webhook,omitempty"`
 }
 
 func (hs HTTPScenario) Validate() error {
@@ -50,9 +49,7 @@ func (hsr HTTPScenarioResponse) Validate() error {
 		&hsr,
 		validation.Field(
 			&hsr.StatusCode,
-			validation.Required,
-			validation.Min(http.StatusOK),
-			validation.Max(http.StatusNetworkAuthenticationRequired),
+			common.CodeStatusValidator...,
 		),
 
 	)
