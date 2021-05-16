@@ -40,8 +40,8 @@ func NewHTTPTypeProvider(w http.ResponseWriter) *HTTPTypeProvider {
 	return &HTTPTypeProvider{w: w}
 }
 
-func (hp *HTTPTypeProvider) Unmarshal(rawScenario []map[string]interface{}) error {
-	err := mapstructure.Decode(rawScenario, &hp.scenarios)
+func (hp *HTTPTypeProvider) Unmarshal(rawScenarios []map[string]interface{}) error {
+	err := mapstructure.Decode(rawScenarios, &hp.scenarios)
 	if err != nil {
 		return err
 	}

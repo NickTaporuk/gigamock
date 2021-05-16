@@ -12,6 +12,8 @@ const (
 	HTTPScenarioType = "http"
 	// GraphQLScenarioType represents type "graphql" for a scenario
 	GraphQLScenarioType = "graphql"
+	// KafkaScenarioType represents type "kafka" for a scenario
+	KafkaScenarioType = "kafka"
 )
 
 var (
@@ -20,7 +22,7 @@ var (
 	// in the feature should add kafka and grpc
 	ScenarioTypeValidator = []validation.Rule{
 		validation.Required,
-		validation.In(HTTPScenarioType, GraphQLScenarioType),
+		validation.In(HTTPScenarioType, GraphQLScenarioType, KafkaScenarioType),
 	}
 	// ScenarioMethodValidator is a validator rule for the method type of a scenario
 	// must be any type of HTTP methods
@@ -29,11 +31,6 @@ var (
 		validation.In(http.MethodPost, http.MethodGet, http.MethodPut,
 			http.MethodConnect, http.MethodDelete, http.MethodHead,
 			http.MethodOptions, http.MethodPatch, http.MethodTrace),
-	}
-	// ScenarioPathValidator is a validator rule for the method type of a scenario
-	// must be required
-	ScenarioPathValidator = []validation.Rule{
-		validation.Required,
 	}
 	// BaseScenariosValidator is a validator rule for a base validation of the field scenarios
 	// must be required
