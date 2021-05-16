@@ -30,7 +30,7 @@ scenarios:
       body: ""
 
 webhook:
-  path: "http:/localhost:5678/monitoring/v1/route/users"
+  path: "http://localhost:9999/hello"
   method: POST
   type: http
   scenarios:
@@ -43,4 +43,5 @@ webhook:
           "param1": "test1"
         cookies:
           param1: "test1"
+        body: "{\"test\":\"1\"}"
       delay: 100s

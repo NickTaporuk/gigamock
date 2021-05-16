@@ -1,14 +1,15 @@
-package webhook
+package webhookType
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation"
 )
 
-// WebHookTypeProvider
-type WebHookTypeProvider interface {
-	// Unmarshal
+// TypeProvider
+type TypeProvider interface {
+	// Unmarshal is a parse
 	Unmarshal([]map[string]interface{}) error
 	// Send
 	Send() error
+	// Validate
 	validation.Validatable
 }

@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/NickTaporuk/gigamock/src/scenarios"
+	"github.com/NickTaporuk/gigamock/src/webhookType"
 	"net/http"
 	"os"
 	"os/signal"
@@ -82,12 +84,29 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 
 		ext, err := fileType.FileExtensionDetection(v.FilePath)
 		if err != nil {
+			di.logger.
+				WithError(err).
+				WithFields(logrus.Fields{
+					"indexed file": v,
+					"method":       "dispatcher.RouteMatching",
+					"action":       "fileType.FileExtensionDetection(v.FilePath)",
+					"stack":        string(debug.Stack()),
+				}).Error("fileType.FileExtensionDetection is retrieved an error")
 			return err
 		}
 		di.logger.Debug(fmt.Sprintf("file %s extension is %s", v.FilePath, ext))
 
 		provider, err := fileProvider.Factory(ext, di.logger)
 		if err != nil {
+			di.logger.
+				WithError(err).
+				WithFields(logrus.Fields{
+					"extension": ext,
+					"provider":  provider,
+					"method":    "dispatcher.RouteMatching",
+					"action":    "fileProvider.Factory(ext, di.logger)",
+					"stack":     string(debug.Stack()),
+				}).Error("fileProvider.Factory is retrieved an error")
 			return err
 		}
 		di.logger.Debug(fmt.Sprintf("file provider is %v, extension is %s", provider, ext))
@@ -96,22 +115,55 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 		// can be http, graphql, grpc, kafka and so one
 		scenario, err := provider.Unmarshal(v.FilePath)
 		if err != nil {
+			di.logger.
+				WithError(err).
+				WithFields(logrus.Fields{
+					"scenario": scenario,
+					"method":   "dispatcher.RouteMatching",
+					"action":   "provider.Unmarshal(v.FilePath)",
+					"stack":    string(debug.Stack()),
+				}).Error("provider.Unmarshal is retrieved an error")
 			return err
 		}
 		di.logger.Debug(fmt.Sprintf("scenario data parsed, scenario data : %v", scenario))
 
 		scenarioTypeProvider, err := scenarioType.Factory(scenario.Type, w, req)
 		if err != nil {
+			di.logger.
+				WithError(err).
+				WithFields(logrus.Fields{
+					"scenario": scenario,
+					"method":   "dispatcher.RouteMatching",
+					"action":   "scenarioType.Factory(scenario.Type, w, req)",
+					"stack":    string(debug.Stack()),
+				}).Error("scenarioType.Factory is retrieved an error")
 			return err
 		}
 
 		err = scenarioTypeProvider.Unmarshal(scenario.Scenarios)
 		if err != nil {
+			di.logger.
+				WithError(err).
+				WithFields(logrus.Fields{
+					"scenario": scenario,
+					"method":   "dispatcher.RouteMatching",
+					"action":   "scenarioTypeProvider.Unmarshal(scenario.Scenarios)",
+					"stack":    string(debug.Stack()),
+				}).Error("scenarioTypeProvider.Unmarshal is retrieved an error")
+
 			return err
 		}
 
 		err = scenarioTypeProvider.Validate()
 		if err != nil {
+			di.logger.
+				WithError(err).
+				WithFields(logrus.Fields{
+					"scenario": scenario,
+					"method":   "dispatcher.RouteMatching",
+					"action":   "scenarioTypeProvider.Validate()",
+					"stack":    string(debug.Stack()),
+				}).Error("scenarioTypeProvider.Validate is retrieved an error")
 			return err
 		}
 
@@ -119,37 +171,99 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 
 		// need to run webhook
 		if scenario.WebHook != nil {
-			go func() {
-				err = scenario.WebHook.Validate()
+			go func(
+				scenario *scenarios.BaseGigaMockScenario,
+				scenarioNumber int,
+			) {
+				err = di.runWebHook(scenario, scenarioNumber)
 				if err != nil {
 					di.logger.
 						WithError(err).
 						WithFields(logrus.Fields{
 							"scenario": scenario,
 							"method":   "dispatcher.RouteMatching",
-							"action":   "scenario.WebHook.Validate()",
+							"action":   "di.runWebHook(scenario)",
 							"stack":    string(debug.Stack()),
-						}).Error("scenario.WebHook.Validate is retrieved an error")
+						}).Error("di.runWebHook is retrieved an error")
 					return
 				}
-
-				err = scenario.WebHook.Run()
-				if err != nil {
-					di.logger.
-						WithError(err).
-						WithFields(logrus.Fields{
-							"scenario": scenario,
-							"method":   "dispatcher.RouteMatching",
-							"action":   "scenario.WebHook.Run()",
-							"stack":    string(debug.Stack()),
-						}).Error("scenario.WebHook.Run¬ is retrieved an error")
-					return
-				}
-			}()
+			}(scenario, v.ScenarioNumber)
 		}
 	} else {
 		//	no pattern matched; send 404 response
 		http.NotFound(w, req)
+	}
+
+	return nil
+}
+
+func (di *Dispatcher) runWebHook(
+	scenario *scenarios.BaseGigaMockScenario,
+	scenarioNumber int,
+) error {
+	err := scenario.WebHook.Validate()
+	if err != nil {
+		di.logger.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"scenario": scenario,
+				"method":   "dispatcher.RouteMatching",
+				"action":   "scenario.WebHook.Validate()",
+				"stack":    string(debug.Stack()),
+			}).Error("scenario.WebHook.Validate is retrieved an error")
+		return err
+	}
+
+	webHookProvider, err := webhookType.Factory(scenario.WebHook, di.logger, scenarioNumber)
+	if err != nil {
+		di.logger.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"scenario": scenario,
+				"method":   "dispatcher.RouteMatching",
+				"action":   "webhookType.Factory(scenario.WebHook.Type, di.logger)",
+				"stack":    string(debug.Stack()),
+			}).Error("webhookType.Factory is retrieved an error")
+		return err
+	}
+
+	err = webHookProvider.Unmarshal(scenario.WebHook.Scenarios)
+	if err != nil {
+		di.logger.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"scenario": scenario,
+				"method":   "dispatcher.RouteMatching",
+				"action":   "webHookProvider.Unmarshal()",
+				"stack":    string(debug.Stack()),
+			}).Error("webHookProvider.Unmarshal is retrieved an error")
+		return err
+	}
+
+	err = webHookProvider.Validate()
+	if err != nil {
+		di.logger.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"scenario": scenario,
+				"method":   "dispatcher.RouteMatching",
+				"action":   "webHookProvider.Validate()",
+				"stack":    string(debug.Stack()),
+			}).Error("webHookProvider.Validate() is retrieved an error")
+		return err
+	}
+
+	err = webHookProvider.Send()
+	if err != nil {
+		di.logger.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"scenario": scenario,
+				"method":   "dispatcher.RouteMatching",
+				"action":   "webHookProvider.Send()",
+				"stack":    string(debug.Stack()),
+			}).Error("webHookProvider.Send is retrieved an error")
+		return err
 	}
 
 	return nil
@@ -168,7 +282,8 @@ func (di *Dispatcher) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			WithFields(logrus.Fields{
 				"trace":   string(debug.Stack()),
 				"request": req,
-				"method":  "di.RouteMatching",
+				"action":  "di.RouteMatching",
+				"method":  "func (di *Dispatcher) ServeHTTP(w http.ResponseWriter, req *http.Request)",
 			}).
 			Error("route matching retrieved an error")
 
@@ -193,8 +308,11 @@ func (di Dispatcher) Start(addr string) {
 			di.logger.
 				WithError(err).
 				WithFields(logrus.Fields{
-					"trace":   string(debug.Stack()),
-					"address": addr,
+					"trace":  string(debug.Stack()),
+					"srv":    srv,
+					"action": "srv.ListenAndServe()",
+					"method": "func (di Dispatcher) Start(addr string)",
+					"stack":  string(debug.Stack()),
 				}).
 				Error("server retrieved an error")
 		}
@@ -218,7 +336,9 @@ func (di Dispatcher) Start(addr string) {
 		di.logger.
 			WithError(err).
 			WithFields(logrus.Fields{
-				"trace": string(debug.Stack()),
+				"trace":  string(debug.Stack()),
+				"action": "srv.Shutdown(ctx)",
+				"method": "func (di Dispatcher) Start(addr string)",
 			}).Fatal("shutting down")
 	}
 

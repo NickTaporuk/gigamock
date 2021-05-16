@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	validation "github.com/go-ozzo/ozzo-validation"
+	is "github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
 const (
@@ -45,5 +46,12 @@ var (
 		validation.Required,
 		validation.Min(http.StatusOK),
 		validation.Max(http.StatusNetworkAuthenticationRequired),
+	}
+	// URLPathValidator is a validator rule for the URL path
+	// must be required
+	// a string must be a valid URL
+	URLPathValidator = []validation.Rule{
+		validation.Required,
+		is.URL,
 	}
 )

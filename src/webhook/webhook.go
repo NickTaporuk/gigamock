@@ -7,8 +7,11 @@ import (
 )
 
 type WebHooker interface {
+	Scenarios() []map[string]interface{}
+	Type() string
+	Method() string
+
 	validation.Validatable
-	Run() error
 }
 
 // WebHook
@@ -16,10 +19,7 @@ type WebHook struct {
 	Scenarios []map[string]interface{} `yaml:"scenarios",json:"scenarios"`
 	Type      string                   `yaml:"type",json:"type"`
 	Method    string                   `yaml:"method",json:"method"`
-}
-
-func (WebHook) Run() error {
-	return nil
+	Path      string                   `yaml:"path",json:"path"`
 }
 
 func (w *WebHook) Validate() error {
@@ -29,11 +29,13 @@ func (w *WebHook) Validate() error {
 
 	switch w.Type {
 	case common.HTTPScenarioType:
+		pntr := *w
 		return validation.ValidateStruct(
-			w,
-			validation.Field(&w.Type, common.ScenarioTypeValidator...),
-			validation.Field(&w.Method, common.ScenarioMethodValidator...),
-			validation.Field(&w.Scenarios, common.BaseScenariosValidator...),
+			&pntr,
+			validation.Field(&pntr.Type, common.ScenarioTypeValidator...),
+			validation.Field(&pntr.Method, common.ScenarioMethodValidator...),
+			validation.Field(&pntr.Path, common.URLPathValidator...),
+			validation.Field(&pntr.Scenarios, common.BaseScenariosValidator...),
 		)
 	}
 
