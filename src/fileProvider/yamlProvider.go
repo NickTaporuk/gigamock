@@ -37,6 +37,8 @@ func (y YAMLProvider) Unmarshal(filePath string) (*scenarios.BaseGigaMockScenari
 			WithFields(logrus.Fields{
 				"scenario": scenario,
 				"trace":    string(debug.Stack()),
+				"method":   "j.Unmarshal",
+				"action":   "yaml.Unmarshal",
 			}).
 			Error("yaml unmarshal retrieved an error")
 		return scenario, err
@@ -46,7 +48,12 @@ func (y YAMLProvider) Unmarshal(filePath string) (*scenarios.BaseGigaMockScenari
 	if err != nil {
 		y.logger.
 			WithError(err).
-			WithFields(logrus.Fields{"scenario": scenario}).
+			WithFields(logrus.Fields{
+				"scenario": scenario,
+				"trace":    string(debug.Stack()),
+				"method":   "j.Unmarshal",
+				"action":   "yaml.Unmarshal",
+			}).
 			Error("yaml validation retrieved an error")
 		return nil, err
 	}

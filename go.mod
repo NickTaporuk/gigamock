@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/azer/url-router v0.0.0-20140924232216-1a0aa252538c // indirect
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible // indirect
+	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
