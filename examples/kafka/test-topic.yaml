@@ -1,0 +1,18 @@
+path: "/internal/queue/:messageID"
+method: GET
+type: kafka
+scenarios:
+  - name: "default scenario send kafka message to the topic test-topic"
+    host: "0.0.0.0"
+    port: ":9092"
+    topic: "test-topic"
+    delay: 100s
+
+    producer:
+      headers:
+        X-Request-Id: "831429af-1e40-4b44-8be3-06fd252578b0"
+      message: "{\"test\":\"test\"}"
+    retry: 1
+
+    consumer:
+      cli: true

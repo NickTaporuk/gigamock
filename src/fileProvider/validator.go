@@ -24,7 +24,7 @@ func ValidateBaseFileStruct(scenario scenarios.BaseGigaMockScenario) error {
 			validation.Required),
 		validation.Field(&scenario.Type,
 			validation.Required,
-			validation.In(scenarios.HTTPScenarioType, scenarios.GraphQLScenarioType),
+			validation.In(scenarios.HTTPScenarioType, scenarios.GraphQLScenarioType, scenarios.KafkaScenarioType),
 		),
 		validation.Field(&scenario.Scenarios,
 			validation.Required,

@@ -5,4 +5,6 @@ const (
 	HTTPScenarioType = "http"
 	// GraphQLScenarioType represents type "graphql" for a scenario
 	GraphQLScenarioType = "graphql"
+	// KafkaScenarioType represents type "kafka" for a scenario
+	KafkaScenarioType = "kafka"
 )
