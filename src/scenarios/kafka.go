@@ -25,11 +25,19 @@ func (ks KafkaScenario) Validate() error {
 	)
 }
 
+// KafkaScenarioProducer is a description of fields for parsing to the current struct
+// from map[string]interface{}
 type KafkaScenarioProducer struct {
-	Headers map[string]string
-	Message string
+	Headers   map[string]string
+	Message   KafkaScenarioProducerMessage
 	Partition int // kafka partition
-	Retry   uint32
+	Retry     uint32
+}
+
+// KafkaScenarioProducerMessage
+type KafkaScenarioProducerMessage struct {
+	Key   string
+	Value string
 }
 
 func (ksp KafkaScenarioProducer) Validate() error {
