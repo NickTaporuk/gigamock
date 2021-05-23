@@ -37,6 +37,7 @@ func (k *KafkaProvider) Unmarshal(rawScenarios []map[string]interface{}) error {
 	return nil
 }
 
+// Retrieve is a main function to run a scenario
 func (k *KafkaProvider) Retrieve(scenarioNumber int) {
 	// if we have a type producer
 	// I should to send a message some times
@@ -80,11 +81,11 @@ func (k *KafkaProvider) Retrieve(scenarioNumber int) {
 			return
 		}
 
-		//TODO: add logic to stop gorutine with consumer
+		//TODO: add logic to stop goroutine with consumer
 		if scenario.Consumer != nil {
 			go func() {
 				if runnedConsumers == nil {
-					runnedConsumers = map[string]interface{}{}
+					runnedConsumers = map[string]bool{}
 				}
 
 				if _, ok := runnedConsumers[scenario.Topic]; !ok {
