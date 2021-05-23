@@ -64,9 +64,10 @@ func (a App) Run() error {
 		lgr.
 			WithError(err).
 			WithFields(logrus.Fields{
-				"trace":   string(debug.Stack()),
+				"trace":  string(debug.Stack()),
 				"router": router,
-				"method": "filesWalker.Walk",
+				"method": "func (a App) Run() error",
+				"action": "filesWalker.Walk(router)",
 			}).
 			Error("file walker retrieved an error")
 		return err

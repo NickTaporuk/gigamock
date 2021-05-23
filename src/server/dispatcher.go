@@ -127,7 +127,7 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 		}
 		di.logger.Debug(fmt.Sprintf("scenario data parsed, scenario data : %v", scenario))
 
-		scenarioTypeProvider, err := scenarioType.Factory(scenario.Type, w, req)
+		scenarioTypeProvider, err := scenarioType.Factory(scenario.Type, w, req, di.logger)
 		if err != nil {
 			di.logger.
 				WithError(err).

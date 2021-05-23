@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 
 	urlrouter "github.com/azer/url-router"
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -59,20 +60,55 @@ func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error
 			return err
 		}
 
+		if info.IsDir() {
+			return nil
+		}
+
 		filePath := path
 
 		ext, err := fileType.FileExtensionDetection(info.Name())
 		if err != nil {
-			return nil
+			dw.logger.
+				WithError(err).
+				WithFields(logrus.Fields{
+					"action":        "fileType.FileExtensionDetection(info.Name())",
+					"method":        "func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error)",
+					"stack":         string(debug.Stack()),
+					"ext":           ext,
+					"filePath":      filePath,
+					"fileInfo.Name": info.Name(),
+				}).Error("action fileType.FileExtensionDetection is retrieved an error")
+
+			return err
 		}
 
 		provider, err := fileProvider.Factory(ext, dw.logger)
 		if err != nil {
+			dw.logger.
+				WithError(err).
+				WithFields(logrus.Fields{
+					"action":        "fileProvider.Factory(ext, dw.logger)",
+					"method":        "func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error)",
+					"stack":         string(debug.Stack()),
+					"ext":           ext,
+					"filePath":      filePath,
+					"fileInfo.Name": info.Name(),
+				}).Error("action fileProvider.Factory is retrieved an error")
 			return err
 		}
 
 		scenario, err := provider.Unmarshal(filePath)
 		if err != nil {
+			dw.logger.
+				WithError(err).
+				WithFields(logrus.Fields{
+					"action":        "provider.Unmarshal(filePath)",
+					"method":        "func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error)",
+					"stack":         string(debug.Stack()),
+					"ext":           ext,
+					"filePath":      filePath,
+					"fileInfo.Name": info.Name(),
+				}).Error("action provider.Unmarshal is retrieved an error")
 			return err
 		}
 
@@ -87,6 +123,15 @@ func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error
 
 	err = filepath.Walk(dw.rootDirPath, walkFunk)
 	if err != nil {
+		dw.logger.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"action":         "filepath.Walk(dw.rootDirPath, walkFunk)",
+				"method":         "func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error)",
+				"stack":          string(debug.Stack()),
+				"root directory": dw.rootDirPath,
+			}).Error("action filepath.Walk is retrieved an error")
+
 		return nil, err
 	}
 
