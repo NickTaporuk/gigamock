@@ -1,0 +1,68 @@
+# This is an example .goreleaser.yml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+    - go generate ./...
+builds:
+  - main: ./cmd/main.go
+    binary: gigamock
+    goos:
+      - windows
+      - linux
+      - darwin
+      - freebsd
+    goarch:
+      - amd64
+      - arm64
+      - arm
+      - 386
+    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}}
+archives:
+  - id: homebrew
+    name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+    files:
+      - README.md
+      - data/*
+    format: zip
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+env_files:
+  # use only one or release will fail!
+  github_token: ~/.gittoken
+brews:
+  - name: gigamock
+    # Github repository to push the tap to.
+    tap:
+      owner: NickTaporuk
+      name: homebrew-tap
+
+    url_template: "https://github.com/NickTaporuk/gigamock/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+
+    # Git author used to commit to the repository.
+    # Defaults are shown.
+    commit_author:
+      name: NickTaporuk
+      email: nictaporuk@gmail.com
+
+    folder: Formula
+    caveats: "How to use this binary"
+    description: "Software to make a mock of REST API or work with kafka messages."
+    install: |
+      bin.install "gigamock"
