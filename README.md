@@ -9,7 +9,7 @@ You can download the precompiled release binary from [releases](https://github.c
 or via
 
 ```bash
-wget https://github.com/NickTaporuk/2021ai_test/releases/<version>/2021ai_test_<version>_<os>_<arch>
+wget https://github.com/NickTaporuk/gigamock/releases/<version>/2021ai_test_<version>_<os>_<arch>
 ```
 
 #### Go get
