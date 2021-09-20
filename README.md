@@ -33,5 +33,5 @@ brew upgrade gigamock
     grpc api mock
     graphql api mock
     parse swagger api to mock scenarios
-    benchmarks as a performance tests
+    benchmarks as performance tests(REST API, kafka topics, graphql APIs, NATS and so one)
 
