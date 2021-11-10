@@ -15,6 +15,8 @@ func main() {
 	}
 	defer func() {
 		err = inst.Stop()
-		log.Fatal(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}()
 }
