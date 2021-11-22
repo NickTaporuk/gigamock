@@ -3,6 +3,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/NickTaporuk/gigamock)](https://goreportcard.com/report/github.com/NickTaporuk/gigamock)
 
 Gigamock is a generic utility to be used as mocked server to provide a simplified and consistent API over various network data sources such as http REST API or grpc or graphql services or as a mocking messaging systems like a kafka via mocking response or send message to some message system.
+
+# Status of this project
+    This package is very, very early and incomplete! It is mostly just an experiment and is not really useful yet.
 # Conception
 # Download
 
