@@ -1,0 +1,25 @@
+DELETE {{host}}users/1
+Content-Type: application/json
+
+{}
+
+###
+PUT {{host}}users/1
+Content-Type: application/json
+
+{}
+
+###
+##
+## GET users list
+##
+GET {{host}}users
+Accept: application/json
+###
+
+POST {{host}}users/1
+Content-Type: application/json
+
+{}
+###
+

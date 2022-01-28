@@ -1,0 +1,15 @@
+##
+## GET particular hero
+##
+GET {{host}}starwars/heroes/1
+Accept: application/json
+
+###
+
+##
+## GET list of heroes
+##
+GET {{host}}starwars/heroes
+Accept: application/json
+
+###

@@ -8,24 +8,30 @@ import (
 	"runtime/debug"
 	"strconv"
 
+	"github.com/NickTaporuk/gigamock/src/scenarios"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
-
-	"github.com/NickTaporuk/gigamock/src/scenarios"
 )
 
 var runnedConsumers map[string]bool
 
+// KafkaProvider is an implementation of  the interface TypeProvider
+// this provider is responsible to run a scenario with type kafka
 type KafkaProvider struct {
+	ctx       context.Context
 	w         http.ResponseWriter
 	scenarios scenarios.KafkaScenarios
 	logger    *logrus.Entry
 }
 
-func NewKafkaProvider(w http.ResponseWriter, lgr *logrus.Entry) *KafkaProvider {
-	return &KafkaProvider{w: w, logger: lgr}
+func NewKafkaProvider(
+	w http.ResponseWriter,
+	lgr *logrus.Entry,
+	ctx context.Context,
+) *KafkaProvider {
+	return &KafkaProvider{w: w, logger: lgr, ctx: ctx}
 }
 
 func (k *KafkaProvider) Unmarshal(rawScenarios []map[string]interface{}) error {
@@ -103,7 +109,7 @@ func (k *KafkaProvider) Retrieve(scenarioNumber int) {
 						return
 					}
 					// make a new reader that consumes from topic-A
-					r := kafka.NewReader(kafka.ReaderConfig{
+					reader := kafka.NewReader(kafka.ReaderConfig{
 						Brokers:  []string{k.host(&scenario)},
 						GroupID:  "consumer-group-id",
 						Topic:    scenario.Topic,
@@ -112,15 +118,15 @@ func (k *KafkaProvider) Retrieve(scenarioNumber int) {
 					})
 
 					for {
-						m, err := r.ReadMessage(context.Background())
+						m, err := reader.ReadMessage(context.Background())
 						if err != nil {
 							break
 						}
 
-						k.logger.Info(fmt.Sprintf("message at topic/partition/offset/headers %v/%v/%v: %s = %s, %v\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value), m.Headers))
+						k.logger.Info(fmt.Sprintf("message at topic/partition/offset/headers %v/%v/%v: %s = %s, %#v\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value), m.Headers))
 					}
 
-					if err := r.Close(); err != nil {
+					if err := reader.Close(); err != nil {
 						k.logger.
 							WithError(err).
 							WithFields(logrus.Fields{
@@ -132,6 +138,7 @@ func (k *KafkaProvider) Retrieve(scenarioNumber int) {
 					}
 					runnedConsumers[scenario.Topic] = true
 				}
+
 			}()
 		}
 

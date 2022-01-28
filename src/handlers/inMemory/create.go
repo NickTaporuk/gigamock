@@ -3,8 +3,9 @@ package inMemory
 import (
 	"encoding/json"
 	"errors"
-	"github.com/NickTaporuk/gigamock/src/fileWalkers"
 	"net/http"
+
+	"github.com/NickTaporuk/gigamock/src/fileWalkers"
 )
 
 var (
