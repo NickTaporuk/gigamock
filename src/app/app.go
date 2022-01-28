@@ -1,14 +1,15 @@
 package app
 
 import (
+	"context"
 	"flag"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 
 	urlrouter "github.com/azer/url-router"
+	"github.com/sirupsen/logrus"
 
 	"github.com/NickTaporuk/gigamock/src/fileWalkers"
 	"github.com/NickTaporuk/gigamock/src/logger"
@@ -22,12 +23,14 @@ type Application interface {
 }
 
 type App struct {
+	ctx context.Context
 }
 
-func NewApp() *App {
-	return &App{}
+func NewApp(ctx context.Context) *App {
+	return &App{ctx: ctx}
 }
 
+// Stop
 func (a App) Stop() error {
 	return nil
 }
@@ -73,7 +76,7 @@ func (a App) Run() error {
 		return err
 	}
 
-	di := server.NewDispatcher(files, router, lgr)
+	di := server.NewDispatcher(a.ctx, files, router, lgr)
 
 	di.Start(*serverIP + *serverPort)
 
