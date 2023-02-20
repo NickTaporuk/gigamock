@@ -47,6 +47,7 @@ func (a App) Run() error {
 	dirPath := flag.String("dir-path", path, "Mocks config folder")
 	loggerLevel := flag.String("logger-level", "DEBUG", "logger level")
 	loggerPrettyPrint := flag.Bool("logger-pretty-print", false, "logger level")
+	usePPROF := flag.Bool("use-pprof", false, "should use pprof")
 	flag.Parse()
 
 	// router is an instance of urlrouter to match urls with parameters
@@ -76,7 +77,7 @@ func (a App) Run() error {
 		return err
 	}
 
-	di := server.NewDispatcher(a.ctx, files, router, lgr)
+	di := server.NewDispatcher(a.ctx, files, router, lgr, usePPROF)
 
 	di.Start(*serverIP + *serverPort)
 

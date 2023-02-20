@@ -1,4 +1,0 @@
-GET {{host}}internal/v1/in-memory
-Accept: application/json
-
-###

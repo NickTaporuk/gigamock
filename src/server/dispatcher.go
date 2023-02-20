@@ -3,22 +3,24 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/NickTaporuk/gigamock/src/scenarios"
-	"github.com/NickTaporuk/gigamock/src/webhookType"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime/debug"
 	"time"
 
-	urlrouter "github.com/azer/url-router"
 	"github.com/sirupsen/logrus"
+	_ "net/http/pprof"
 
 	"github.com/NickTaporuk/gigamock/src/fileProvider"
 	"github.com/NickTaporuk/gigamock/src/fileType"
 	"github.com/NickTaporuk/gigamock/src/fileWalkers"
 	"github.com/NickTaporuk/gigamock/src/handlers/inMemory"
 	"github.com/NickTaporuk/gigamock/src/scenarioType"
+	"github.com/NickTaporuk/gigamock/src/scenarios"
+	"github.com/NickTaporuk/gigamock/src/webhookType"
+	urlrouter "github.com/azer/url-router"
 )
 
 // Dispatcher internally maintains all part of the app
@@ -27,6 +29,7 @@ type Dispatcher struct {
 	indexedFiles map[string]fileWalkers.IndexedData
 	router       *urlrouter.Router
 	logger       *logrus.Entry
+	usePPROF     bool
 }
 
 // NewDispatcher is the constructor
@@ -35,12 +38,14 @@ func NewDispatcher(
 	indexedFiles map[string]fileWalkers.IndexedData,
 	router *urlrouter.Router,
 	lgr *logrus.Entry,
+	usePPROF bool,
 ) *Dispatcher {
 	return &Dispatcher{
 		indexedFiles: indexedFiles,
 		router:       router,
 		logger:       lgr,
 		ctx:          ctx,
+		usePPROF:     usePPROF,
 	}
 }
 
@@ -62,8 +67,52 @@ func (di *Dispatcher) inMemoryHandlers(w http.ResponseWriter, req *http.Request)
 	return false, nil
 }
 
+//pprof debug
+func (di Dispatcher) pprrofHandling(w http.ResponseWriter, req *http.Request) (bool, error) {
+	switch req.URL.Path {
+	case "/debug/pprof/":
+		{
+			pprof.Index(w, req)
+			return true, nil
+		}
+	case "/debug/pprof/cmdline":
+		{
+			pprof.Cmdline(w, req)
+			return true, nil
+		}
+	case "/debug/pprof/profile":
+		{
+			pprof.Profile(w, req)
+			return true, nil
+		}
+	case "/debug/pprof/symbol":
+		{
+			pprof.Symbol(w, req)
+			return true, nil
+		}
+	case "/debug/pprof/trace":
+		{
+			pprof.Trace(w, req)
+			return true, nil
+		}
+
+	}
+	return false, nil
+}
+
 // RouteMatching
 func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) error {
+	if di.usePPROF {
+		matched, err := di.pprrofHandling(w, req)
+		if err != nil {
+			return err
+		}
+
+		if matched {
+			return nil
+		}
+	}
+
 	matched, err := di.inMemoryHandlers(w, req)
 	if err != nil {
 		return err
