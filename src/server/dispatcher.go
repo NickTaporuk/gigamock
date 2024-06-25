@@ -3,8 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/NickTaporuk/gigamock/src/scenarios"
-	"github.com/NickTaporuk/gigamock/src/webhookType"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,6 +17,8 @@ import (
 	"github.com/NickTaporuk/gigamock/src/fileWalkers"
 	"github.com/NickTaporuk/gigamock/src/handlers/inMemory"
 	"github.com/NickTaporuk/gigamock/src/scenarioType"
+	"github.com/NickTaporuk/gigamock/src/scenarios"
+	"github.com/NickTaporuk/gigamock/src/webhookType"
 )
 
 // Dispatcher internally maintains all part of the app
@@ -307,6 +307,7 @@ func (di Dispatcher) Start(addr string) {
 	}
 
 	go func() {
+		di.logger.Info("Ready to accept connections")
 		if err := srv.ListenAndServe(); err != nil {
 			di.logger.
 				WithError(err).
