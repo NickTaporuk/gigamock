@@ -68,18 +68,8 @@ func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error
 
 		ext, err := fileType.FileExtensionDetection(info.Name())
 		if err != nil {
-			dw.logger.
-				WithError(err).
-				WithFields(logrus.Fields{
-					"action":        "fileType.FileExtensionDetection(info.Name())",
-					"method":        "func (dw *DirWalk) Walk(router *urlrouter.Router) (map[string]IndexedData, error)",
-					"stack":         string(debug.Stack()),
-					"ext":           ext,
-					"filePath":      filePath,
-					"fileInfo.Name": info.Name(),
-				}).Error("action fileType.FileExtensionDetection is retrieved an error")
-
-			return err
+			dw.logger.Debug(fmt.Sprintf("file %s was skipped because extension is not supported", filePath))
+			return nil
 		}
 
 		provider, err := fileProvider.Factory(ext, dw.logger)

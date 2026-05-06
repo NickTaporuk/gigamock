@@ -14,15 +14,30 @@ const (
 	GraphQLScenarioType = "graphql"
 	// KafkaScenarioType represents type "kafka" for a scenario
 	KafkaScenarioType = "kafka"
+	// GRPCScenarioType represents type "grpc" for a scenario
+	GRPCScenarioType = "grpc"
+	// NATSScenarioType represents type "nats" for a scenario
+	NATSScenarioType = "nats"
+	// RabbitMQScenarioType represents type "rabbitmq" for a scenario
+	RabbitMQScenarioType = "rabbitmq"
+	// MQTTScenarioType represents type "mqtt" for a scenario
+	MQTTScenarioType = "mqtt"
 )
 
 var (
 	// ScenarioTypeValidator is a validator rule for the type of a scenario
-	// can be http or graphql
-	// in the feature should add kafka and grpc
+	// can be http, graphql, kafka, grpc, nats, rabbitmq, or mqtt
 	ScenarioTypeValidator = []validation.Rule{
 		validation.Required,
-		validation.In(HTTPScenarioType, GraphQLScenarioType, KafkaScenarioType),
+		validation.In(
+			HTTPScenarioType,
+			GraphQLScenarioType,
+			KafkaScenarioType,
+			GRPCScenarioType,
+			NATSScenarioType,
+			RabbitMQScenarioType,
+			MQTTScenarioType,
+		),
 	}
 	// ScenarioMethodValidator is a validator rule for the method type of a scenario
 	// must be any type of HTTP methods

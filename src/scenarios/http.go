@@ -6,18 +6,19 @@ import (
 	"github.com/NickTaporuk/gigamock/src/common"
 )
 
-// GigaMockHTTPScenario
+// GigaMockHTTPScenario is a struct for parsing yaml file
 type GigaMockHTTPScenario struct {
 	Scenarios []HTTPScenario `yaml:"scenarios"`
 }
 
-// Scenario
+// HTTPScenario Scenario is a struct for parsing yaml file
 type HTTPScenario struct {
 	Request  HTTPScenarioRequest  `yaml:"request"`
 	Response HTTPScenarioResponse `yaml:"response"`
 	Delay    string               `yaml:"delay,omitempty"`
 }
 
+// Validate validates HTTPScenario
 func (hs HTTPScenario) Validate() error {
 	return validation.ValidateStruct(
 		&hs,
@@ -26,10 +27,10 @@ func (hs HTTPScenario) Validate() error {
 	)
 }
 
-// HTTPScenarios
+// HTTPScenarios is a slice of HTTPScenario
 type HTTPScenarios []HTTPScenario
 
-// HTTPScenarioRequest
+// HTTPScenarioRequest is a struct for parsing yaml file
 type HTTPScenarioRequest struct {
 	Headers               map[string]string `yaml:"headers,omitempty"`
 	QueryStringParameters map[string]string `yaml:"queryStringParameters,omitempty"`
@@ -37,7 +38,7 @@ type HTTPScenarioRequest struct {
 	Body                  string            `yaml:"body,omitempty"`
 }
 
-// HTTPScenarioResponse
+// HTTPScenarioResponse	is a struct for parsing yaml file
 type HTTPScenarioResponse struct {
 	Body       string            `yaml:"body,omitempty"`
 	StatusCode int               `yaml:"statusCode"`
@@ -45,6 +46,7 @@ type HTTPScenarioResponse struct {
 	Cookies    map[string]string `yaml:"cookies,omitempty"`
 }
 
+// Validate validates HTTPScenarioResponse
 func (hsr HTTPScenarioResponse) Validate() error {
 	return validation.ValidateStruct(
 		&hsr,

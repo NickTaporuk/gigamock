@@ -1,0 +1,44 @@
+path: "/customers.CustomersService/GetCustomer"
+method: POST
+type: grpc
+description: "Unary gRPC mock for retrieving a customer by id"
+proto:
+  descriptorSet: "./examples/grpc/proto/customers.pb"
+  service: "customers.CustomersService"
+  method: "GetCustomer"
+scenarios:
+  - name: "default customer"
+    request:
+      match:
+        customerId: "customer-1"
+    response:
+      code: OK
+      metadata:
+        x-mock-source: "gigamock"
+      body:
+        customer:
+          id: "customer-1"
+          name: "John Doe"
+          email: "john.doe@example.com"
+          status: "ACTIVE"
+
+  - name: "disabled customer"
+    request:
+      match:
+        customerId: "customer-disabled"
+    response:
+      code: OK
+      body:
+        customer:
+          id: "customer-disabled"
+          name: "Jane Disabled"
+          email: "jane.disabled@example.com"
+          status: "DISABLED"
+
+  - name: "customer not found"
+    request:
+      match:
+        customerId: "missing"
+    response:
+      code: NOT_FOUND
+      message: "customer not found"

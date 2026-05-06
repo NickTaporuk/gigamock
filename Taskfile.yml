@@ -1,0 +1,173 @@
+version: "3"
+
+vars:
+  BIN_DIR: '{{default "bin" .BIN_DIR}}'
+  BINARY_NAME: '{{default "gigamock" .BINARY_NAME}}'
+  PORT: '{{default "7777" .PORT}}'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  test:
+    desc: Run Go tests
+    cmds:
+      - go test ./...
+
+  build:
+    desc: Build Gigamock binary into ./bin
+    cmds:
+      - mkdir -p {{.BIN_DIR}}
+      - go build -o {{.BIN_DIR}}/{{.BINARY_NAME}} ./cmd
+
+  install:local:
+    desc: Build Gigamock binary into ./bin
+    cmds:
+      - task: build
+
+  help:
+    desc: Show Gigamock CLI help
+    cmds:
+      - go run ./cmd --help
+
+  run:all:
+    desc: Run Gigamock with all example scenario types
+    cmds:
+      - >-
+        go run ./cmd
+        --server-port :{{.PORT}}
+        --dir-path ./examples/rest
+        --dir-path ./examples/graphql
+        --dir-path ./examples/grpc
+        --dir-path ./examples/kafka
+        --dir-path ./examples/nats
+        --dir-path ./examples/rabbitmq
+        --dir-path ./examples/mqtt
+
+  run:examples:
+    desc: Run Gigamock with the full examples directory
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples
+
+  run:http:
+    desc: Run HTTP examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/rest
+
+  run:graphql:
+    desc: Run GraphQL examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/graphql
+
+  run:grpc:
+    desc: Run gRPC contract examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/grpc
+
+  run:kafka:
+    desc: Run Kafka examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/kafka
+
+  run:nats:
+    desc: Run NATS contract examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/nats
+
+  run:rabbitmq:
+    desc: Run RabbitMQ contract examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/rabbitmq
+
+  run:mqtt:
+    desc: Run MQTT contract examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/mqtt
+
+  docker:build:all:
+    desc: Build Docker images for all scenario types
+    cmds:
+      - task: docker:build:http
+      - task: docker:build:graphql
+      - task: docker:build:grpc
+      - task: docker:build:kafka
+      - task: docker:build:nats
+      - task: docker:build:rabbitmq
+      - task: docker:build:mqtt
+
+  docker:build:http:
+    desc: Build HTTP Docker image
+    cmds:
+      - docker build -f deployment/docker/types/http/Dockerfile -t gigamock-http .
+
+  docker:build:graphql:
+    desc: Build GraphQL Docker image
+    cmds:
+      - docker build -f deployment/docker/types/graphql/Dockerfile -t gigamock-graphql .
+
+  docker:build:grpc:
+    desc: Build gRPC Docker image
+    cmds:
+      - docker build -f deployment/docker/types/grpc/Dockerfile -t gigamock-grpc .
+
+  docker:build:kafka:
+    desc: Build Kafka Docker image
+    cmds:
+      - docker build -f deployment/docker/types/kafka/Dockerfile -t gigamock-kafka .
+
+  docker:build:nats:
+    desc: Build NATS Docker image
+    cmds:
+      - docker build -f deployment/docker/types/nats/Dockerfile -t gigamock-nats .
+
+  docker:build:rabbitmq:
+    desc: Build RabbitMQ Docker image
+    cmds:
+      - docker build -f deployment/docker/types/rabbitmq/Dockerfile -t gigamock-rabbitmq .
+
+  docker:build:mqtt:
+    desc: Build MQTT Docker image
+    cmds:
+      - docker build -f deployment/docker/types/mqtt/Dockerfile -t gigamock-mqtt .
+
+  docker:run:http:
+    desc: Run HTTP Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-http
+
+  docker:run:graphql:
+    desc: Run GraphQL Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-graphql
+
+  docker:run:grpc:
+    desc: Run gRPC Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-grpc
+
+  docker:run:kafka:
+    desc: Run Kafka Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-kafka
+
+  docker:run:nats:
+    desc: Run NATS Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-nats
+
+  docker:run:rabbitmq:
+    desc: Run RabbitMQ Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-rabbitmq
+
+  docker:run:mqtt:
+    desc: Run MQTT Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-mqtt
+
+  features:list:
+    desc: List Gherkin feature files
+    cmds:
+      - find features -name "*.feature" -maxdepth 1 -type f | sort
