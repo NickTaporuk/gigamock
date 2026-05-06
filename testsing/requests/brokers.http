@@ -1,0 +1,49 @@
+###
+# Run all broker examples:
+# go run ./cmd \
+#   --dir-path ./examples/kafka \
+#   --dir-path ./examples/nats \
+#   --dir-path ./examples/rabbitmq \
+#   --dir-path ./examples/mqtt
+#
+# Kafka has runtime support. NATS/RabbitMQ/MQTT are indexed/control-plane mocks
+# and currently return 501 when called through HTTP.
+
+###
+# Kafka topic test-topic
+GET {{host}}internal/queue/message-1
+Accept: application/json
+
+###
+# Kafka duplicate consumer topic test-topic-2
+GET {{host}}internal/queue2/message-2
+Accept: application/json
+
+###
+# NATS order-created scenario, HTTP-facing placeholder
+POST {{host}}internal/nats/orders/order-1
+Content-Type: application/json
+
+{
+  "orderId": "order-1"
+}
+
+###
+# RabbitMQ payment event scenario, HTTP-facing placeholder
+POST {{host}}internal/rabbitmq/payments/payment-1
+Content-Type: application/json
+
+{
+  "paymentId": "payment-1"
+}
+
+###
+# MQTT device telemetry scenario, HTTP-facing placeholder
+POST {{host}}internal/mqtt/devices/device-1/telemetry
+Content-Type: application/json
+
+{
+  "deviceId": "device-1"
+}
+
+###

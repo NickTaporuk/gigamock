@@ -1,0 +1,48 @@
+###
+# Run:
+# go run ./cmd --dir-path ./examples/graphql
+
+###
+# GraphQL GetHero by episode
+POST {{host}}graphql
+Content-Type: application/json
+
+{
+  "operationName": "GetHero",
+  "query": "query GetHero($episode: String!) { hero(episode: $episode) { id name } }",
+  "variables": {
+    "episode": "NEWHOPE"
+  }
+}
+
+###
+# GraphQL GetVillain
+POST {{host}}graphql
+Content-Type: application/json
+
+{
+  "operationName": "GetVillain",
+  "query": "query GetVillain { villain { id name } }"
+}
+
+###
+# GraphQL mocked error
+POST {{host}}graphql
+Content-Type: application/json
+
+{
+  "operationName": "BrokenQuery"
+}
+
+###
+# Legacy GraphQL example endpoint
+POST {{host}}ui/v1/graphQL?param1=test1
+Content-Type: application/json
+Authorization: Bearer test
+Cookie: param1=test1
+
+{
+  "query": "{ hero { id name } }"
+}
+
+###

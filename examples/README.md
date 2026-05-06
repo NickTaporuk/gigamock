@@ -69,6 +69,10 @@ Files:
 
 ```text
 examples/grpc/customer-service-unary.yaml
+examples/grpc/billing-service-unary.yaml
+examples/grpc/billing-service-server-stream.yaml
+examples/grpc/billing-service-client-stream.yaml
+examples/grpc/billing-service-bidi-stream.yaml
 examples/grpc/chat-service-bidi-stream.yaml
 ```
 
@@ -80,6 +84,30 @@ grpcurl -plaintext \
   -d '{"customerId":"customer-1"}' \
   localhost:7778 \
   customers.CustomersService/GetCustomer
+```
+
+Billing unary, server-streaming, and bidirectional examples:
+
+```bash
+grpcurl -plaintext \
+  -d '{"invoiceId":"invoice-1"}' \
+  localhost:7778 \
+  billing.BillingService/GetInvoice
+
+grpcurl -plaintext \
+  -d '{"invoiceId":"invoice-1"}' \
+  localhost:7778 \
+  billing.BillingService/WatchInvoice
+
+grpcurl -plaintext \
+  -d '{"invoiceId":"invoice-1","status":"OPEN","message":"invoice created"}{"invoiceId":"invoice-1","status":"PAID","message":"invoice paid"}' \
+  localhost:7778 \
+  billing.BillingService/UploadInvoiceEvents
+
+grpcurl -plaintext \
+  -d '{"text":"hello","sender":"client"}' \
+  localhost:7778 \
+  billing.BillingService/BillingChat
 ```
 
 ## Kafka

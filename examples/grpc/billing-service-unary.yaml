@@ -1,0 +1,48 @@
+path: "/billing.BillingService/GetInvoice"
+method: POST
+type: grpc
+description: "Unary gRPC mock for retrieving billing invoices"
+proto:
+  file: "billing.proto"
+  importPaths:
+    - "./examples/grpc/proto"
+  service: "billing.BillingService"
+  method: "GetInvoice"
+scenarios:
+  - name: "paid invoice"
+    request:
+      match:
+        invoiceId: "invoice-1"
+    response:
+      code: OK
+      metadata:
+        x-mock-source: "gigamock"
+      body:
+        invoice:
+          id: "invoice-1"
+          customerId: "customer-1"
+          status: "PAID"
+          amountCents: 129900
+          currency: "USD"
+
+  - name: "open invoice"
+    request:
+      match:
+        invoiceId: "invoice-open"
+    response:
+      code: OK
+      body:
+        invoice:
+          id: "invoice-open"
+          customerId: "customer-2"
+          status: "OPEN"
+          amountCents: 4999
+          currency: "EUR"
+
+  - name: "invoice not found"
+    request:
+      match:
+        invoiceId: "missing"
+    response:
+      code: NOT_FOUND
+      message: "invoice not found"

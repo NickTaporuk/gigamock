@@ -80,6 +80,10 @@ Example files:
 
 ```text
 examples/grpc/customer-service-unary.yaml
+examples/grpc/billing-service-unary.yaml
+examples/grpc/billing-service-server-stream.yaml
+examples/grpc/billing-service-client-stream.yaml
+examples/grpc/billing-service-bidi-stream.yaml
 examples/grpc/chat-service-bidi-stream.yaml
 ```
 
@@ -94,6 +98,30 @@ grpcurl -plaintext \
   customers.CustomersService/GetCustomer
 ```
 
+Billing examples cover unary, server-streaming, and bidirectional streaming:
+
+```bash
+grpcurl -plaintext \
+  -d '{"invoiceId":"invoice-1"}' \
+  localhost:7778 \
+  billing.BillingService/GetInvoice
+
+grpcurl -plaintext \
+  -d '{"invoiceId":"invoice-1"}' \
+  localhost:7778 \
+  billing.BillingService/WatchInvoice
+
+grpcurl -plaintext \
+  -d '{"invoiceId":"invoice-1","status":"OPEN","message":"invoice created"}{"invoiceId":"invoice-1","status":"PAID","message":"invoice paid"}' \
+  localhost:7778 \
+  billing.BillingService/UploadInvoiceEvents
+
+grpcurl -plaintext \
+  -d '{"text":"hello","sender":"client"}' \
+  localhost:7778 \
+  billing.BillingService/BillingChat
+```
+
 Switch a gRPC scenario at runtime:
 
 ```bash
@@ -105,3 +133,63 @@ curl -X POST http://localhost:7777/internal/v1/in-memory \
     "scenarioNumber": 2
   }'
 ```
+
+Reflection lists every service loaded from every configured gRPC directory:
+
+```bash
+grpcurl -plaintext localhost:7778 list
+grpcurl -plaintext localhost:7778 list billing.BillingService
+```
+
+## Hardening Settings
+
+gRPC runtime supports extra flags for safer local and CI usage:
+
+```bash
+go run ./cmd \
+  --dir-path ./examples/grpc \
+  --grpc-stream-max-messages 100 \
+  --grpc-stream-timeout-seconds 300
+```
+
+TLS can be enabled with:
+
+```bash
+go run ./cmd \
+  --dir-path ./examples/grpc \
+  --grpc-tls-cert-file ./certs/server.crt \
+  --grpc-tls-key-file ./certs/server.key
+```
+
+mTLS can be enabled by also passing a client CA:
+
+```bash
+go run ./cmd \
+  --dir-path ./examples/grpc \
+  --grpc-tls-cert-file ./certs/server.crt \
+  --grpc-tls-key-file ./certs/server.key \
+  --grpc-tls-client-ca-file ./certs/ca.crt
+```
+
+Runtime metrics are exposed through the HTTP control plane:
+
+```bash
+curl http://localhost:7777/internal/v1/grpc/metrics
+```
+
+The response is keyed by full gRPC method name and contains call/error counts.
+
+## Descriptor Sets
+
+gRPC scenarios can load either `.proto` source files or descriptor sets. Use
+exactly one of `proto.file` or `proto.descriptorSet`.
+
+```yaml
+proto:
+  descriptorSet: "./examples/grpc/proto/billing.pb"
+  service: "billing.BillingService"
+  method: "GetInvoice"
+```
+
+Descriptor-set support is useful in CI or container images where generated
+descriptor artifacts are easier to ship than source proto trees.

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -27,6 +28,8 @@ type Dispatcher struct {
 	indexedFiles map[string]fileWalkers.IndexedData
 	router       *urlrouter.Router
 	logger       *logrus.Entry
+	grpcConfig   GRPCServerConfig
+	grpcMetrics  *grpcMetrics
 }
 
 // NewDispatcher is the constructor
@@ -35,12 +38,15 @@ func NewDispatcher(
 	indexedFiles map[string]fileWalkers.IndexedData,
 	router *urlrouter.Router,
 	lgr *logrus.Entry,
+	grpcConfig GRPCServerConfig,
 ) *Dispatcher {
 	return &Dispatcher{
 		indexedFiles: indexedFiles,
 		router:       router,
 		logger:       lgr,
 		ctx:          ctx,
+		grpcConfig:   grpcConfig,
+		grpcMetrics:  newGRPCMetrics(),
 	}
 }
 
@@ -54,6 +60,13 @@ func (di *Dispatcher) inMemoryHandlers(w http.ResponseWriter, req *http.Request)
 	if req.URL.Path == "/internal/v1/scenarios" && req.Method == http.MethodGet {
 		h := inMemory.NewHandler(&di.indexedFiles, di.logger)
 		h.Details(w, req)
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/grpc/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(di.grpcMetrics.snapshot())
 		return true, nil
 	}
 
@@ -305,7 +318,7 @@ func (di *Dispatcher) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 // Start initialize the HTTP and gRPC mock servers.
-func (di Dispatcher) Start(addr string, grpcAddr string) {
+func (di Dispatcher) Start(addr string) {
 	var wait time.Duration
 
 	srv := &http.Server{
@@ -316,15 +329,15 @@ func (di Dispatcher) Start(addr string, grpcAddr string) {
 		IdleTimeout:  time.Second * 60,
 	}
 
-	grpcServer, grpcListener, err := di.startGRPCServer(grpcAddr)
+	grpcServer, grpcListener, err := di.startGRPCServer()
 	if err != nil {
 		di.logger.
 			WithError(err).
 			WithFields(logrus.Fields{
 				"trace":  string(debug.Stack()),
-				"addr":   grpcAddr,
-				"action": "di.startGRPCServer(grpcAddr)",
-				"method": "func (di Dispatcher) Start(addr string, grpcAddr string)",
+				"addr":   di.grpcConfig.Addr,
+				"action": "di.startGRPCServer()",
+				"method": "func (di Dispatcher) Start(addr string)",
 			}).
 			Fatal("gRPC server start retrieved an error")
 	}

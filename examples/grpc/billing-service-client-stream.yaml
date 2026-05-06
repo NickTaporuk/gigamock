@@ -1,0 +1,48 @@
+path: "/billing.BillingService/UploadInvoiceEvents"
+method: POST
+type: grpc
+description: "Client-streaming gRPC mock for uploading invoice events"
+proto:
+  file: "billing.proto"
+  importPaths:
+    - "./examples/grpc/proto"
+  service: "billing.BillingService"
+  method: "UploadInvoiceEvents"
+scenarios:
+  - name: "upload paid invoice events"
+    stream:
+      steps:
+        - receive:
+            invoiceId: "invoice-1"
+            status: "OPEN"
+        - receive:
+            invoiceId: "invoice-1"
+            status: "PAID"
+        - send:
+            invoice:
+              id: "invoice-1"
+              customerId: "customer-1"
+              status: "PAID"
+              amountCents: 129900
+              currency: "USD"
+        - close:
+            code: OK
+
+  - name: "upload rejected invoice events"
+    stream:
+      steps:
+        - receive:
+            invoiceId: "invoice-rejected"
+            status: "OPEN"
+        - receive:
+            invoiceId: "invoice-rejected"
+            status: "REJECTED"
+        - send:
+            invoice:
+              id: "invoice-rejected"
+              customerId: "customer-3"
+              status: "REJECTED"
+              amountCents: 9900
+              currency: "USD"
+        - close:
+            code: OK

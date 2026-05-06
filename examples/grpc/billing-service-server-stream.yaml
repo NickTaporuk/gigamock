@@ -1,0 +1,64 @@
+path: "/billing.BillingService/WatchInvoice"
+method: POST
+type: grpc
+description: "Server-streaming gRPC mock for invoice status updates"
+proto:
+  file: "billing.proto"
+  importPaths:
+    - "./examples/grpc/proto"
+  service: "billing.BillingService"
+  method: "WatchInvoice"
+scenarios:
+  - name: "invoice payment lifecycle"
+    request:
+      match:
+        invoiceId: "invoice-1"
+    stream:
+      steps:
+        - receive:
+            invoiceId: "invoice-1"
+        - send:
+            invoiceId: "invoice-1"
+            status: "OPEN"
+            message: "invoice created"
+        - send:
+            invoiceId: "invoice-1"
+            status: "PROCESSING"
+            message: "payment processing"
+        - send:
+            invoiceId: "invoice-1"
+            status: "PAID"
+            message: "invoice paid"
+        - close:
+            code: OK
+
+  - name: "invoice rejected"
+    request:
+      match:
+        invoiceId: "invoice-rejected"
+    stream:
+      steps:
+        - receive:
+            invoiceId: "invoice-rejected"
+        - send:
+            invoiceId: "invoice-rejected"
+            status: "OPEN"
+            message: "invoice created"
+        - send:
+            invoiceId: "invoice-rejected"
+            status: "REJECTED"
+            message: "payment rejected"
+        - close:
+            code: OK
+
+  - name: "invoice stream not found"
+    request:
+      match:
+        invoiceId: "missing"
+    stream:
+      steps:
+        - receive:
+            invoiceId: "missing"
+        - close:
+            code: NOT_FOUND
+            message: "invoice stream not found"

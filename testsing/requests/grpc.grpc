@@ -1,0 +1,129 @@
+###
+# Run:
+# go run ./cmd --dir-path ./examples/grpc
+#
+# JetBrains HTTP Client gRPC request format.
+
+###
+# List gRPC services with grpcurl:
+# grpcurl -plaintext {{grpcHost}} list
+
+###
+# Unary default customer
+GRPC {{grpcHost}}/customers.CustomersService/GetCustomer
+
+{
+  "customerId": "customer-1"
+}
+
+###
+# Unary disabled customer. Runtime can auto-match this scenario by request payload.
+GRPC {{grpcHost}}/customers.CustomersService/GetCustomer
+
+{
+  "customerId": "customer-disabled"
+}
+
+###
+# Unary missing customer. Switch active scenario to 2 first from in-memory.http,
+# or call by request payload when the default scenario does not match.
+GRPC {{grpcHost}}/customers.CustomersService/GetCustomer
+
+{
+  "customerId": "missing"
+}
+
+###
+# Billing paid invoice
+GRPC {{grpcHost}}/billing.BillingService/GetInvoice
+
+{
+  "invoiceId": "invoice-1"
+}
+
+###
+# Billing open invoice
+GRPC {{grpcHost}}/billing.BillingService/GetInvoice
+
+{
+  "invoiceId": "invoice-open"
+}
+
+###
+# Billing missing invoice
+GRPC {{grpcHost}}/billing.BillingService/GetInvoice
+
+{
+  "invoiceId": "missing"
+}
+
+###
+# Billing server-streaming invoice lifecycle
+GRPC {{grpcHost}}/billing.BillingService/WatchInvoice
+
+{
+  "invoiceId": "invoice-1"
+}
+
+###
+# Billing server-streaming rejected invoice
+GRPC {{grpcHost}}/billing.BillingService/WatchInvoice
+
+{
+  "invoiceId": "invoice-rejected"
+}
+
+###
+# Billing client-streaming upload events
+GRPC {{grpcHost}}/billing.BillingService/UploadInvoiceEvents
+
+{
+  "invoiceId": "invoice-1",
+  "status": "OPEN",
+  "message": "invoice created"
+}
+{
+  "invoiceId": "invoice-1",
+  "status": "PAID",
+  "message": "invoice paid"
+}
+
+###
+# Billing bidirectional stream happy path
+GRPC {{grpcHost}}/billing.BillingService/BillingChat
+
+{
+  "text": "hello",
+  "sender": "client"
+}
+
+###
+# Billing bidirectional stream rule-based scenario.
+# Switch /billing.BillingService/BillingChat to scenarioNumber 2 first from in-memory.http.
+GRPC {{grpcHost}}/billing.BillingService/BillingChat
+
+{
+  "text": "status invoice-1",
+  "sender": "client"
+}
+
+###
+# Bidirectional stream happy path.
+GRPC {{grpcHost}}/chat.ChatService/Chat
+
+{
+  "text": "hello",
+  "sender": "client"
+}
+
+###
+# Bidirectional stream onReceive scenario. Switch /chat.ChatService/Chat
+# to scenarioNumber 2 first from in-memory.http.
+GRPC {{grpcHost}}/chat.ChatService/Chat
+
+{
+  "text": "status",
+  "sender": "client"
+}
+
+###

@@ -31,6 +31,11 @@ type Config struct {
 	ServerIP          string
 	ServerPort        string
 	GRPCServerPort    string
+	GRPCTLSCertFile   string
+	GRPCTLSKeyFile    string
+	GRPCTLSCAFile     string
+	GRPCStreamMax     int
+	GRPCStreamTimeout int
 	DirPaths          []string
 	LoggerLevel       string
 	LoggerPrettyPrint bool
@@ -60,6 +65,8 @@ func DefaultConfig() (Config, error) {
 		ServerIP:          "0.0.0.0",
 		ServerPort:        ":7777",
 		GRPCServerPort:    ":7778",
+		GRPCStreamMax:     100,
+		GRPCStreamTimeout: 300,
 		DirPaths:          []string{path},
 		LoggerLevel:       "DEBUG",
 		LoggerPrettyPrint: false,
@@ -103,9 +110,17 @@ func (a App) RunWithConfig(cfg Config) error {
 		return err
 	}
 
-	di := server.NewDispatcher(a.ctx, files, router, lgr)
+	grpcConfig := server.GRPCServerConfig{
+		Addr:                 cfg.ServerIP + cfg.GRPCServerPort,
+		TLSCertFile:          cfg.GRPCTLSCertFile,
+		TLSKeyFile:           cfg.GRPCTLSKeyFile,
+		TLSClientCAFile:      cfg.GRPCTLSCAFile,
+		MaxStreamMessages:    cfg.GRPCStreamMax,
+		StreamTimeoutSeconds: cfg.GRPCStreamTimeout,
+	}
+	di := server.NewDispatcher(a.ctx, files, router, lgr, grpcConfig)
 
-	di.Start(cfg.ServerIP+cfg.ServerPort, cfg.ServerIP+cfg.GRPCServerPort)
+	di.Start(cfg.ServerIP + cfg.ServerPort)
 
 	return nil
 }

@@ -1,3 +1,19 @@
+###
+# Run:
+# go run ./cmd --dir-path ./examples/rest --dir-path ./examples/starwars
+
+###
+
+GET {{host}}control-ui/users
+Accept: application/json
+
+###
+
+GET {{host}}users
+Accept: application/json
+
+###
+
 DELETE {{host}}users/1
 Content-Type: application/json
 
@@ -21,5 +37,15 @@ POST {{host}}users/1
 Content-Type: application/json
 
 {}
+
 ###
 
+GET {{host}}starwars/heroes
+Accept: application/json
+
+###
+
+GET {{host}}starwars/heroes/1
+Accept: application/json
+
+###

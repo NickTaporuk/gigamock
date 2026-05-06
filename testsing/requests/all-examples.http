@@ -1,0 +1,63 @@
+###
+# Run all examples:
+# go run ./cmd --dir-path ./examples
+#
+# Or split by type:
+# go run ./cmd \
+#   --dir-path ./examples/rest \
+#   --dir-path ./examples/graphql \
+#   --dir-path ./examples/grpc \
+#   --dir-path ./examples/kafka \
+#   --dir-path ./examples/nats \
+#   --dir-path ./examples/rabbitmq \
+#   --dir-path ./examples/mqtt
+
+###
+GET {{host}}internal/v1/scenarios
+Accept: application/json
+
+###
+GET {{host}}control-ui/users
+Accept: application/json
+
+###
+POST {{host}}graphql
+Content-Type: application/json
+
+{
+  "operationName": "GetHero",
+  "query": "query GetHero($episode: String!) { hero(episode: $episode) { id name } }",
+  "variables": {
+    "episode": "NEWHOPE"
+  }
+}
+
+###
+GET {{host}}internal/queue/message-1
+Accept: application/json
+
+###
+POST {{host}}internal/nats/orders/order-1
+Content-Type: application/json
+
+{
+  "orderId": "order-1"
+}
+
+###
+POST {{host}}internal/rabbitmq/payments/payment-1
+Content-Type: application/json
+
+{
+  "paymentId": "payment-1"
+}
+
+###
+POST {{host}}internal/mqtt/devices/device-1/telemetry
+Content-Type: application/json
+
+{
+  "deviceId": "device-1"
+}
+
+###

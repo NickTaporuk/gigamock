@@ -1,4 +1,137 @@
+###
+# List raw in-memory route state
 GET {{host}}internal/v1/in-memory
 Accept: application/json
+
+###
+
+# List UI-friendly scenario details
+GET {{host}}internal/v1/scenarios
+Accept: application/json
+
+###
+
+# Open mock control UI in browser:
+# {{host}}internal/v1/mock-ui
+
+###
+
+# Switch HTTP /control-ui/users to scenario 0: active users
+POST {{host}}internal/v1/in-memory
+Content-Type: application/json
+
+{
+  "path": "/control-ui/users",
+  "method": "GET",
+  "scenarioNumber": 0
+}
+
+###
+
+# Switch HTTP /control-ui/users to scenario 1: empty list
+POST {{host}}internal/v1/in-memory
+Content-Type: application/json
+
+{
+  "path": "/control-ui/users",
+  "method": "GET",
+  "scenarioNumber": 1
+}
+
+###
+
+# Switch HTTP /control-ui/users to scenario 2: temporary error
+POST {{host}}internal/v1/in-memory
+Content-Type: application/json
+
+{
+  "path": "/control-ui/users",
+  "method": "GET",
+  "scenarioNumber": 2
+}
+
+###
+
+# Switch GraphQL /graphql to scenario 0: GetHero
+POST {{host}}internal/v1/in-memory
+Content-Type: application/json
+
+{
+  "path": "/graphql",
+  "method": "POST",
+  "scenarioNumber": 0
+}
+
+###
+
+# Switch gRPC unary mock to scenario 2: customer not found
+POST {{host}}internal/v1/in-memory
+Content-Type: application/json
+
+{
+  "path": "/customers.CustomersService/GetCustomer",
+  "method": "POST",
+  "scenarioNumber": 2
+}
+
+###
+
+# Switch billing gRPC unary mock to scenario 1: open invoice
+POST {{host}}internal/v1/in-memory
+Content-Type: application/json
+
+{
+  "path": "/billing.BillingService/GetInvoice",
+  "method": "POST",
+  "scenarioNumber": 1
+}
+
+###
+
+# Switch billing gRPC unary mock to scenario 2: invoice not found
+POST {{host}}internal/v1/in-memory
+Content-Type: application/json
+
+{
+  "path": "/billing.BillingService/GetInvoice",
+  "method": "POST",
+  "scenarioNumber": 2
+}
+
+###
+
+# Switch billing server-stream mock to scenario 1: rejected invoice
+POST {{host}}internal/v1/in-memory
+Content-Type: application/json
+
+{
+  "path": "/billing.BillingService/WatchInvoice",
+  "method": "POST",
+  "scenarioNumber": 1
+}
+
+###
+
+# Switch billing bidirectional mock to scenario 2: rule based
+POST {{host}}internal/v1/in-memory
+Content-Type: application/json
+
+{
+  "path": "/billing.BillingService/BillingChat",
+  "method": "POST",
+  "scenarioNumber": 2
+}
+
+###
+
+# Switch gRPC bidi stream mock to scenario 2: server initiated messages
+POST {{host}}internal/v1/in-memory
+Content-Type: application/json
+
+{
+  "path": "/chat.ChatService/Chat",
+  "method": "POST",
+  "scenarioNumber": 2
+}
 
 ###

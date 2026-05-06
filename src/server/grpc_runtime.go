@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,19 +11,24 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	rpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 	"gopkg.in/yaml.v3"
 
@@ -37,6 +44,8 @@ type grpcRuntime struct {
 	store   *map[string]fileWalkers.IndexedData
 	logger  *logrus.Entry
 	methods map[string]*grpcMethodRuntime
+	config  GRPCServerConfig
+	metrics *grpcMetrics
 }
 
 func (g *grpcRuntime) mustEmbedGRPCMockService() {}
@@ -72,6 +81,7 @@ type grpcResponseConfig struct {
 	Code     string                 `json:"code" yaml:"code"`
 	Message  string                 `json:"message" yaml:"message"`
 	Metadata map[string]string      `json:"metadata" yaml:"metadata"`
+	Trailers map[string]string      `json:"trailers" yaml:"trailers"`
 	Body     map[string]interface{} `json:"body" yaml:"body"`
 }
 
@@ -106,7 +116,7 @@ type grpcMethodRuntime struct {
 	store    *map[string]fileWalkers.IndexedData
 }
 
-func (di *Dispatcher) startGRPCServer(addr string) (*grpc.Server, net.Listener, error) {
+func (di *Dispatcher) startGRPCServer() (*grpc.Server, net.Listener, error) {
 	runtime, files, services, err := di.buildGRPCRuntime()
 	if err != nil {
 		return nil, nil, err
@@ -116,12 +126,17 @@ func (di *Dispatcher) startGRPCServer(addr string) (*grpc.Server, net.Listener, 
 		return nil, nil, nil
 	}
 
-	lis, err := net.Listen("tcp", addr)
+	lis, err := net.Listen("tcp", di.grpcConfig.Addr)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	grpcServer := grpc.NewServer()
+	serverOptions, err := grpcServerOptions(di.grpcConfig)
+	if err != nil {
+		lis.Close()
+		return nil, nil, err
+	}
+	grpcServer := grpc.NewServer(serverOptions...)
 	for serviceName, service := range services {
 		serviceDesc := grpc.ServiceDesc{
 			ServiceName: serviceName,
@@ -135,11 +150,11 @@ func (di *Dispatcher) startGRPCServer(addr string) (*grpc.Server, net.Listener, 
 
 	rpb.RegisterServerReflectionServer(grpcServer, reflection.NewServer(reflection.ServerOptions{
 		Services:           grpcServer,
-		DescriptorResolver: files.AsResolver(),
+		DescriptorResolver: files,
 	}))
 
 	go func() {
-		di.logger.Infof("Ready to accept gRPC connections on %s", addr)
+		di.logger.Infof("Ready to accept gRPC connections on %s", di.grpcConfig.Addr)
 		if err := grpcServer.Serve(lis); err != nil {
 			di.logger.WithError(err).Error("gRPC server retrieved an error")
 		}
@@ -203,56 +218,74 @@ func (s *grpcServiceRuntime) streamMethods() []grpc.StreamDesc {
 	return streams
 }
 
-func (di *Dispatcher) buildGRPCRuntime() (*grpcRuntime, linker.Files, map[string]*grpcServiceRuntime, error) {
+func (di *Dispatcher) buildGRPCRuntime() (*grpcRuntime, grpcDescriptorResolver, map[string]*grpcServiceRuntime, error) {
 	runtime := &grpcRuntime{
 		store:   &di.indexedFiles,
 		logger:  di.logger,
 		methods: map[string]*grpcMethodRuntime{},
+		config:  di.grpcConfig,
+		metrics: di.grpcMetrics,
 	}
 	services := map[string]*grpcServiceRuntime{}
-	var allFiles linker.Files
+	allFiles := grpcDescriptorResolver{}
 	compiledFiles := map[string]linker.Files{}
+	descriptorSetFiles := map[string]grpcDescriptorResolver{}
 
 	for key, indexedData := range di.indexedFiles {
 		config, err := readGRPCMockFile(indexedData.FilePath)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, grpcDescriptorResolver{}, nil, err
 		}
 		if config.Type != common.GRPCScenarioType {
 			continue
 		}
+		if err := validateGRPCMockFile(indexedData.FilePath, config); err != nil {
+			return nil, grpcDescriptorResolver{}, nil, err
+		}
 
 		serviceName, methodName, err := grpcServiceAndMethod(config)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, grpcDescriptorResolver{}, nil, err
 		}
 
-		protoFile := config.Proto.File
-		if protoFile == "" {
-			return nil, nil, nil, fmt.Errorf("grpc scenario %s must define proto.file", indexedData.FilePath)
-		}
-
-		files, ok := compiledFiles[protoFile]
-		if !ok {
-			files, err = compileProto(di.ctx, protoFile, config.Proto.ImportPaths)
-			if err != nil {
-				return nil, nil, nil, fmt.Errorf("compile proto %s: %w", protoFile, err)
+		var files grpcDescriptorResolver
+		protoSource := config.Proto.File
+		if config.Proto.DescriptorSet != "" {
+			if cached, ok := descriptorSetFiles[config.Proto.DescriptorSet]; ok {
+				files = cached
+			} else {
+				files, err = loadDescriptorSet(config.Proto.DescriptorSet)
+				if err != nil {
+					return nil, grpcDescriptorResolver{}, nil, fmt.Errorf("load descriptor set %s: %w", config.Proto.DescriptorSet, err)
+				}
+				descriptorSetFiles[config.Proto.DescriptorSet] = files
+				allFiles.add(files)
 			}
-			compiledFiles[protoFile] = files
-			allFiles = append(allFiles, files...)
+			protoSource = config.Proto.DescriptorSet
+		} else {
+			compiled, ok := compiledFiles[config.Proto.File]
+			if !ok {
+				compiled, err = compileProto(di.ctx, config.Proto.File, config.Proto.ImportPaths)
+				if err != nil {
+					return nil, grpcDescriptorResolver{}, nil, fmt.Errorf("compile proto %s: %w", config.Proto.File, err)
+				}
+				compiledFiles[config.Proto.File] = compiled
+				allFiles.add(grpcDescriptorResolver{resolvers: []protodesc.Resolver{compiled.AsResolver()}})
+			}
+			files = grpcDescriptorResolver{resolvers: []protodesc.Resolver{compiled.AsResolver()}}
 		}
 
-		desc, err := files.AsResolver().FindDescriptorByName(protoreflect.FullName(serviceName))
+		desc, err := files.FindDescriptorByName(protoreflect.FullName(serviceName))
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, grpcDescriptorResolver{}, nil, err
 		}
 		serviceDesc, ok := desc.(protoreflect.ServiceDescriptor)
 		if !ok {
-			return nil, nil, nil, fmt.Errorf("%s is not a gRPC service", serviceName)
+			return nil, grpcDescriptorResolver{}, nil, fmt.Errorf("%s is not a gRPC service", serviceName)
 		}
 		methodDesc := serviceDesc.Methods().ByName(protoreflect.Name(methodName))
 		if methodDesc == nil {
-			return nil, nil, nil, fmt.Errorf("method %s/%s is not found in %s", serviceName, methodName, protoFile)
+			return nil, grpcDescriptorResolver{}, nil, fmt.Errorf("method %s/%s is not found in %s", serviceName, methodName, protoSource)
 		}
 
 		fullMethod := "/" + serviceName + "/" + methodName
@@ -265,7 +298,7 @@ func (di *Dispatcher) buildGRPCRuntime() (*grpcRuntime, linker.Files, map[string
 		}
 		runtime.methods[fullMethod] = methodRuntime
 		if _, ok := services[serviceName]; !ok {
-			services[serviceName] = &grpcServiceRuntime{metadata: protoFile}
+			services[serviceName] = &grpcServiceRuntime{metadata: protoSource}
 		}
 		services[serviceName].methods = append(services[serviceName].methods, methodRuntime)
 	}
@@ -312,6 +345,116 @@ func compileProto(ctx context.Context, protoFile string, importPaths []string) (
 	return compiler.Compile(ctx, target)
 }
 
+type grpcDescriptorResolver struct {
+	resolvers []protodesc.Resolver
+}
+
+func (r *grpcDescriptorResolver) add(other grpcDescriptorResolver) {
+	r.resolvers = append(r.resolvers, other.resolvers...)
+}
+
+func (r grpcDescriptorResolver) FindFileByPath(path string) (protoreflect.FileDescriptor, error) {
+	for _, resolver := range r.resolvers {
+		file, err := resolver.FindFileByPath(path)
+		if err == nil {
+			return file, nil
+		}
+	}
+	return nil, protoregistry.NotFound
+}
+
+func (r grpcDescriptorResolver) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
+	for _, resolver := range r.resolvers {
+		desc, err := resolver.FindDescriptorByName(name)
+		if err == nil {
+			return desc, nil
+		}
+	}
+	return nil, protoregistry.NotFound
+}
+
+func loadDescriptorSet(path string) (grpcDescriptorResolver, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return grpcDescriptorResolver{}, err
+	}
+	set := &descriptorpb.FileDescriptorSet{}
+	if err := proto.Unmarshal(raw, set); err != nil {
+		return grpcDescriptorResolver{}, err
+	}
+	files, err := protodesc.NewFiles(set)
+	if err != nil {
+		return grpcDescriptorResolver{}, err
+	}
+	return grpcDescriptorResolver{resolvers: []protodesc.Resolver{files}}, nil
+}
+
+func validateGRPCMockFile(filePath string, config grpcMockFile) error {
+	if config.Path == "" {
+		return fmt.Errorf("grpc scenario %s must define path", filePath)
+	}
+	if config.Method == "" {
+		return fmt.Errorf("grpc scenario %s must define method", filePath)
+	}
+	if config.Type != common.GRPCScenarioType {
+		return fmt.Errorf("grpc scenario %s must use type grpc", filePath)
+	}
+	if (config.Proto.File == "") == (config.Proto.DescriptorSet == "") {
+		return fmt.Errorf("grpc scenario %s must define exactly one of proto.file or proto.descriptorSet", filePath)
+	}
+	if config.Proto.Service == "" {
+		return fmt.Errorf("grpc scenario %s must define proto.service", filePath)
+	}
+	if config.Proto.Method == "" {
+		return fmt.Errorf("grpc scenario %s must define proto.method", filePath)
+	}
+	if len(config.Scenarios) == 0 {
+		return fmt.Errorf("grpc scenario %s must define at least one scenario", filePath)
+	}
+	for index, scenario := range config.Scenarios {
+		if scenario.Response.Code != "" && grpcStatusCode(scenario.Response.Code) == codes.Unknown && strings.ToUpper(scenario.Response.Code) != "UNKNOWN" {
+			return fmt.Errorf("grpc scenario %s scenario %d has unknown response.code %q", filePath, index, scenario.Response.Code)
+		}
+		for stepIndex, step := range scenario.Stream.Steps {
+			if step.Close != nil && grpcStatusCode(step.Close.Code) == codes.Unknown && strings.ToUpper(step.Close.Code) != "UNKNOWN" {
+				return fmt.Errorf("grpc scenario %s scenario %d stream step %d has unknown close.code %q", filePath, index, stepIndex, step.Close.Code)
+			}
+		}
+	}
+	return nil
+}
+
+func grpcServerOptions(config GRPCServerConfig) ([]grpc.ServerOption, error) {
+	if config.TLSCertFile == "" && config.TLSKeyFile == "" && config.TLSClientCAFile == "" {
+		return nil, nil
+	}
+	if config.TLSCertFile == "" || config.TLSKeyFile == "" {
+		return nil, fmt.Errorf("grpc TLS requires both --grpc-tls-cert-file and --grpc-tls-key-file")
+	}
+
+	cert, err := tls.LoadX509KeyPair(config.TLSCertFile, config.TLSKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	tlsConfig := &tls.Config{
+		MinVersion:   tls.VersionTLS12,
+		Certificates: []tls.Certificate{cert},
+	}
+	if config.TLSClientCAFile != "" {
+		rawCA, err := os.ReadFile(config.TLSClientCAFile)
+		if err != nil {
+			return nil, err
+		}
+		pool := x509.NewCertPool()
+		if !pool.AppendCertsFromPEM(rawCA) {
+			return nil, fmt.Errorf("grpc TLS client CA file %s does not contain valid PEM certificates", config.TLSClientCAFile)
+		}
+		tlsConfig.ClientCAs = pool
+		tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+	}
+	return []grpc.ServerOption{grpc.Creds(credentials.NewTLS(tlsConfig))}, nil
+}
+
 func grpcServiceAndMethod(config grpcMockFile) (string, string, error) {
 	serviceName := config.Proto.Service
 	methodName := config.Proto.Method
@@ -333,48 +476,98 @@ func grpcServiceAndMethod(config grpcMockFile) (string, string, error) {
 }
 
 func (g *grpcRuntime) invokeUnary(ctx context.Context, method *grpcMethodRuntime, req proto.Message) (interface{}, error) {
+	fullMethod := grpcFullMethod(method)
+	started := time.Now()
+	var failed bool
+	defer func() {
+		g.metrics.record(fullMethod, failed)
+		g.logger.WithFields(logrus.Fields{
+			"grpcMethod": fullMethod,
+			"duration":   time.Since(started).String(),
+			"failed":     failed,
+		}).Info("gRPC unary call completed")
+	}()
+
 	scenario := method.activeScenario(req)
 	if len(scenario.Response.Metadata) > 0 {
-		pairs := make([]string, 0, len(scenario.Response.Metadata)*2)
-		for key, value := range scenario.Response.Metadata {
-			pairs = append(pairs, key, value)
-		}
-		grpc.SetHeader(ctx, metadata.Pairs(pairs...))
+		grpc.SetHeader(ctx, metadata.Pairs(metadataPairs(scenario.Response.Metadata)...))
+	}
+	if len(scenario.Response.Trailers) > 0 {
+		grpc.SetTrailer(ctx, metadata.Pairs(metadataPairs(scenario.Response.Trailers)...))
 	}
 
 	code := grpcStatusCode(scenario.Response.Code)
 	if code != codes.OK {
+		failed = true
 		return nil, status.Error(code, scenario.Response.Message)
 	}
 
-	return buildDynamicMessage(method.method.Output(), scenario.Response.Body)
+	msg, err := buildDynamicMessage(method.method.Output(), scenario.Response.Body)
+	failed = err != nil
+	return msg, err
 }
 
 func (g *grpcRuntime) invokeStream(method *grpcMethodRuntime, stream grpc.ServerStream) error {
+	fullMethod := grpcFullMethod(method)
+	started := time.Now()
+	var failed bool
+	defer func() {
+		g.metrics.record(fullMethod, failed)
+		g.logger.WithFields(logrus.Fields{
+			"grpcMethod": fullMethod,
+			"duration":   time.Since(started).String(),
+			"failed":     failed,
+		}).Info("gRPC stream call completed")
+	}()
+
+	if timeout := g.config.StreamTimeoutSeconds; timeout > 0 {
+		ctx, cancel := context.WithTimeout(stream.Context(), time.Duration(timeout)*time.Second)
+		defer cancel()
+		stream = &contextServerStream{ServerStream: stream, ctx: ctx}
+	}
+
 	scenario := method.activeScenario(nil)
+	if len(scenario.Response.Metadata) > 0 {
+		stream.SetHeader(metadata.Pairs(metadataPairs(scenario.Response.Metadata)...))
+	}
+	if len(scenario.Response.Trailers) > 0 {
+		stream.SetTrailer(metadata.Pairs(metadataPairs(scenario.Response.Trailers)...))
+	}
+
 	for _, payload := range scenario.Stream.SendOnConnect {
 		if err := sendDynamicMessage(stream, method.method.Output(), payload); err != nil {
+			failed = true
 			return err
 		}
 	}
 
+	messageCount := 0
 	for _, step := range scenario.Stream.Steps {
+		if err := g.checkStreamLimit(stream, &messageCount); err != nil {
+			failed = true
+			return err
+		}
 		if step.Receive != nil {
 			msg := dynamicpb.NewMessage(method.method.Input())
 			if err := stream.RecvMsg(msg); err != nil {
+				failed = true
 				return err
 			}
 			if !matchesMessage(msg, step.Receive) {
+				failed = true
 				return status.Error(codes.InvalidArgument, "stream receive payload does not match scenario")
 			}
 		}
 		if step.Send != nil {
 			if err := sendDynamicMessage(stream, method.method.Output(), step.Send); err != nil {
+				failed = true
 				return err
 			}
 		}
 		if step.Close != nil {
-			return grpcCloseError(step.Close)
+			err := grpcCloseError(step.Close)
+			failed = err != nil
+			return err
 		}
 	}
 
@@ -383,11 +576,16 @@ func (g *grpcRuntime) invokeStream(method *grpcMethodRuntime, stream grpc.Server
 	}
 
 	for {
+		if err := g.checkStreamLimit(stream, &messageCount); err != nil {
+			failed = true
+			return err
+		}
 		msg := dynamicpb.NewMessage(method.method.Input())
 		if err := stream.RecvMsg(msg); err != nil {
 			if err == io.EOF {
 				return nil
 			}
+			failed = true
 			return err
 		}
 		for _, rule := range scenario.Stream.OnReceive {
@@ -396,14 +594,30 @@ func (g *grpcRuntime) invokeStream(method *grpcMethodRuntime, stream grpc.Server
 			}
 			if rule.Send != nil {
 				if err := sendDynamicMessage(stream, method.method.Output(), rule.Send); err != nil {
+					failed = true
 					return err
 				}
 			}
 			if rule.Close != nil {
-				return grpcCloseError(rule.Close)
+				err := grpcCloseError(rule.Close)
+				failed = err != nil
+				return err
 			}
 		}
 	}
+}
+
+func (g *grpcRuntime) checkStreamLimit(stream grpc.ServerStream, count *int) error {
+	select {
+	case <-stream.Context().Done():
+		return stream.Context().Err()
+	default:
+	}
+	*count++
+	if g.config.MaxStreamMessages > 0 && *count > g.config.MaxStreamMessages {
+		return status.Error(codes.ResourceExhausted, "grpc stream message limit exceeded")
+	}
+	return nil
 }
 
 func (m *grpcMethodRuntime) activeScenario(req proto.Message) grpcMockScenario {
@@ -489,6 +703,27 @@ func sendDynamicMessage(stream grpc.ServerStream, desc protoreflect.MessageDescr
 		return err
 	}
 	return stream.SendMsg(msg)
+}
+
+func metadataPairs(raw map[string]string) []string {
+	pairs := make([]string, 0, len(raw)*2)
+	for key, value := range raw {
+		pairs = append(pairs, key, value)
+	}
+	return pairs
+}
+
+func grpcFullMethod(method *grpcMethodRuntime) string {
+	return "/" + string(method.method.Parent().FullName()) + "/" + string(method.method.Name())
+}
+
+type contextServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (s *contextServerStream) Context() context.Context {
+	return s.ctx
 }
 
 func normalizeJSONValue(value interface{}) interface{} {

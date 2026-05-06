@@ -1,0 +1,55 @@
+path: "/billing.BillingService/BillingChat"
+method: POST
+type: grpc
+description: "Bidirectional gRPC billing assistant mock"
+proto:
+  file: "billing.proto"
+  importPaths:
+    - "./examples/grpc/proto"
+  service: "billing.BillingService"
+  method: "BillingChat"
+scenarios:
+  - name: "billing assistant happy path"
+    stream:
+      sendOnConnect:
+        - text: "billing assistant connected"
+          sender: "billing-mock"
+      steps:
+        - receive:
+            text: "hello"
+            sender: "client"
+        - send:
+            text: "hello, invoice invoice-1 is PAID"
+            sender: "billing-mock"
+        - close:
+            code: OK
+
+  - name: "billing assistant validation error"
+    stream:
+      steps:
+        - receive:
+            text: ""
+        - close:
+            code: INVALID_ARGUMENT
+            message: "message text is required"
+
+  - name: "billing assistant rule based"
+    stream:
+      sendOnConnect:
+        - text: "billing assistant ready"
+          sender: "billing-mock"
+      onReceive:
+        - match:
+            text: "status invoice-1"
+          send:
+            text: "invoice invoice-1 is PAID"
+            sender: "billing-mock"
+        - match:
+            text: "status invoice-open"
+          send:
+            text: "invoice invoice-open is OPEN"
+            sender: "billing-mock"
+        - match:
+            text: "bye"
+          close:
+            code: OK

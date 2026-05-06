@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package billing;
+
+service BillingService {
+  rpc GetInvoice(GetInvoiceRequest) returns (GetInvoiceResponse);
+  rpc WatchInvoice(GetInvoiceRequest) returns (stream InvoiceEvent);
+  rpc UploadInvoiceEvents(stream InvoiceEvent) returns (GetInvoiceResponse);
+  rpc BillingChat(stream BillingMessage) returns (stream BillingMessage);
+}
+
+message GetInvoiceRequest {
+  string invoice_id = 1;
+}
+
+message GetInvoiceResponse {
+  Invoice invoice = 1;
+}
+
+message Invoice {
+  string id = 1;
+  string customer_id = 2;
+  string status = 3;
+  int64 amount_cents = 4;
+  string currency = 5;
+}
+
+message InvoiceEvent {
+  string invoice_id = 1;
+  string status = 2;
+  string message = 3;
+}
+
+message BillingMessage {
+  string text = 1;
+  string sender = 2;
+}

@@ -15,13 +15,15 @@ Common top-level fields:
 
 Scenario type docs:
 
-- [HTTP](http.md)
-- [GraphQL](graphql.md)
-- [gRPC](grpc.md)
-- [Kafka](kafka.md)
-- [NATS](nats.md)
-- [RabbitMQ](rabbitmq.md)
-- [MQTT](mqtt.md)
+| Type | Documentation | Main Fields |
+| --- | --- | --- |
+| HTTP | [HTTP](http.md) | `request`, `response`, `statusCode`, `headers`, `body` |
+| GraphQL | [GraphQL](graphql.md) | `operationName`, `query`, `variables`, `response` |
+| gRPC | [gRPC](grpc.md) | `proto`, `request.match`, `response`, `stream` |
+| Kafka | [Kafka](kafka.md) | `host`, `port`, `topic`, `producer`, `consumer` |
+| NATS | [NATS](nats.md) | `host`, `subject`, `headers`, `message` |
+| RabbitMQ | [RabbitMQ](rabbitmq.md) | `url`, `exchange`, `routingKey`, `message` |
+| MQTT | [MQTT](mqtt.md) | `broker`, `clientID`, `topic`, `qos`, `message` |
 
 Runtime status:
 
@@ -34,3 +36,5 @@ Runtime status:
 | `nats` | YAML contract and UI indexing implemented; native NATS runtime planned. |
 | `rabbitmq` | YAML contract and UI indexing implemented; native RabbitMQ runtime planned. |
 | `mqtt` | YAML contract and UI indexing implemented; native MQTT runtime planned. |
+
+See the repository documentation index in [../README.md](../README.md).

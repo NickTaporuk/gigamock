@@ -54,10 +54,15 @@ go run ./cmd \
   -server-ip 0.0.0.0 \
   -server-port :7777 \
   -grpc-server-port :7778 \
+  -grpc-stream-max-messages 100 \
+  -grpc-stream-timeout-seconds 300 \
   -dir-path ./config \
   -logger-level DEBUG \
   -logger-pretty-print=false
 ```
+
+gRPC TLS/mTLS flags are also available. See
+[gRPC scenario hardening settings](docs/scenario-types/grpc.md#hardening-settings).
 
 `--dir-path` can be used multiple times when mocks are split across different
 directories:
@@ -81,39 +86,7 @@ go run ./cmd --help
 
 ## Mock File Format
 
-Example HTTP mock:
-
-```yaml
-path: "/users"
-method: GET
-type: http
-description: "retrieve a list of active users"
-scenarios:
-  - name: "default scenario"
-    request:
-    response:
-      headers:
-        Content-Type: "application/json"
-      statusCode: 200
-      body: |
-        {
-          "users": [
-            {
-              "name": "Luke Skywalker"
-            }
-          ]
-        }
-  - name: "error 500"
-    request:
-    response:
-      statusCode: 500
-      body: |
-        {
-          "error": "internal error"
-        }
-```
-
-The top-level fields are:
+Mock files share a small common envelope:
 
 - `path`: endpoint path used for matching requests.
 - `method`: HTTP method used for matching requests.
@@ -122,8 +95,19 @@ The top-level fields are:
 - `scenarios`: ordered list of available responses. Scenario index starts at
   `0`.
 
-Detailed field references are available in
-[`docs/scenario-types`](docs/scenario-types/README.md).
+Detailed field references are split by scenario type:
+
+| Type | Documentation | Example |
+| --- | --- | --- |
+| HTTP | [HTTP scenarios](docs/scenario-types/http.md) | [`examples/rest`](examples/rest) |
+| GraphQL | [GraphQL scenarios](docs/scenario-types/graphql.md) | [`examples/graphql`](examples/graphql) |
+| gRPC | [gRPC scenarios](docs/scenario-types/grpc.md) | [`examples/grpc`](examples/grpc) |
+| Kafka | [Kafka scenarios](docs/scenario-types/kafka.md) | [`examples/kafka`](examples/kafka) |
+| NATS | [NATS scenarios](docs/scenario-types/nats.md) | [`examples/nats`](examples/nats) |
+| RabbitMQ | [RabbitMQ scenarios](docs/scenario-types/rabbitmq.md) | [`examples/rabbitmq`](examples/rabbitmq) |
+| MQTT | [MQTT scenarios](docs/scenario-types/mqtt.md) | [`examples/mqtt`](examples/mqtt) |
+
+The full documentation index is available in [`docs/README.md`](docs/README.md).
 
 ## Examples
 
@@ -136,6 +120,11 @@ Ready-to-read YAML examples are available in the `examples` directory:
   `operationName`, `query`, and `variables` request matching.
 - `examples/grpc/customer-service-unary.yaml`: real unary gRPC mock driven by a
   `.proto` file.
+- `examples/grpc/billing-service-unary.yaml`: real billing unary gRPC mock.
+- `examples/grpc/billing-service-server-stream.yaml`: real billing
+  server-streaming gRPC mock.
+- `examples/grpc/billing-service-bidi-stream.yaml`: real billing bidirectional
+  gRPC mock.
 - `examples/grpc/chat-service-bidi-stream.yaml`: real bidirectional gRPC stream
   mock with scripted receive/send steps.
 - `examples/kafka/test-topic.yaml`: Kafka producer/consumer scenario.
@@ -187,32 +176,18 @@ The UI shows:
 Changing the selected scenario updates the in-memory route store. The mock
 server starts using the selected scenario immediately.
 
-## GraphQL Mocks
+## Scenario Documentation
 
-GraphQL mocks use `type: graphql` and are served over HTTP. They support the
-same scenario switching model as HTTP mocks, plus optional request matching by
-GraphQL payload fields:
+Use the scenario type documentation for field-level details and request
+examples:
 
-- `operationName`
-- `query`
-- `variables`
-
-Example request body:
-
-```json
-{
-  "operationName": "GetHero",
-  "query": "query GetHero($episode: String!) { hero(episode: $episode) { id name } }",
-  "variables": {
-    "episode": "NEWHOPE"
-  }
-}
-```
-
-When the currently active scenario does not match the incoming GraphQL payload,
-Gigamock searches the other scenarios for a matching request definition and
-returns that response. This allows several GraphQL operations to share one
-endpoint such as `/graphql`.
+- [HTTP scenarios](docs/scenario-types/http.md)
+- [GraphQL scenarios](docs/scenario-types/graphql.md)
+- [gRPC scenarios](docs/scenario-types/grpc.md)
+- [Kafka scenarios](docs/scenario-types/kafka.md)
+- [NATS scenarios](docs/scenario-types/nats.md)
+- [RabbitMQ scenarios](docs/scenario-types/rabbitmq.md)
+- [MQTT scenarios](docs/scenario-types/mqtt.md)
 
 ## Internal API
 
@@ -239,106 +214,6 @@ curl -X POST http://localhost:7777/internal/v1/in-memory \
     "scenarioNumber": 1
   }'
 ```
-
-## gRPC Mocks
-
-Gigamock starts a real gRPC server beside the HTTP control plane. By default the
-HTTP server listens on `:7777` and the gRPC server listens on `:7778`.
-
-gRPC mocks are dynamic: Gigamock loads `.proto` files at startup, registers the
-described services on a `grpc.Server`, enables reflection for `grpcurl`, decodes
-requests with protobuf reflection, and builds YAML responses with `protojson`.
-
-Unary gRPC mock format:
-
-```yaml
-path: "/customers.CustomersService/GetCustomer"
-method: POST
-type: grpc
-description: "mock GetCustomer gRPC method"
-proto:
-  file: "customers.proto"
-  importPaths:
-    - "./examples/grpc/proto"
-  service: "customers.CustomersService"
-  method: "GetCustomer"
-scenarios:
-  - name: "default customer"
-    request:
-      match:
-        customerId: "customer-1"
-    response:
-      code: OK
-      metadata:
-        x-mock: "gigamock"
-      body:
-        customer:
-          id: "customer-1"
-          name: "John Doe"
-  - name: "not found"
-    request:
-      match:
-        customerId: "missing"
-    response:
-      code: NOT_FOUND
-      message: "customer not found"
-```
-
-Call it with:
-
-```bash
-go run ./cmd --dir-path ./examples/grpc
-
-grpcurl -plaintext \
-  -d '{"customerId":"customer-1"}' \
-  localhost:7778 \
-  customers.CustomersService/GetCustomer
-```
-
-Switch the active scenario through the HTTP control API:
-
-```bash
-curl -X POST http://localhost:7777/internal/v1/in-memory \
-  -H "Content-Type: application/json" \
-  -d '{
-    "path": "/customers.CustomersService/GetCustomer",
-    "method": "POST",
-    "scenarioNumber": 2
-  }'
-```
-
-For bidirectional streaming, use a scripted state machine:
-
-```yaml
-path: "/chat.ChatService/Chat"
-method: POST
-type: grpc
-description: "mock bidirectional chat stream"
-proto:
-  file: "chat.proto"
-  importPaths:
-    - "./examples/grpc/proto"
-  service: "chat.ChatService"
-  method: "Chat"
-scenarios:
-  - name: "happy path"
-    stream:
-      steps:
-        - receive:
-            text: "hello"
-        - send:
-            text: "hi"
-        - receive:
-            text: "ping"
-        - send:
-            text: "pong"
-        - close:
-            code: OK
-```
-
-Streaming scenarios support `sendOnConnect`, ordered `steps`, and `onReceive`
-rules. The active stream scenario can be switched from the same UI/API as HTTP
-and GraphQL scenarios.
 
 ## Download
 
@@ -369,8 +244,6 @@ brew upgrade gigamock
 
 ## Roadmap
 
-- gRPC dynamic unary mock engine
-- gRPC server-streaming, client-streaming, and bidirectional-streaming mocks
 - NATS runtime publisher/subscriber provider
 - RabbitMQ runtime publisher/consumer provider
 - MQTT runtime publisher/subscriber provider
