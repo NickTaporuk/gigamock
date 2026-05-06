@@ -1,5 +1,5 @@
-# This is an example .goreleaser.yml file with some sane defaults.
-# Make sure to check the documentation at http://goreleaser.com
+version: 2
+
 before:
   hooks:
     # You may remove this if you don't use go modules.
@@ -19,24 +19,33 @@ builds:
       - arm64
       - arm
       - 386
+    ignore:
+      - goos: windows
+        goarch: arm64
+      - goos: windows
+        goarch: arm
     ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}}
 archives:
   - id: homebrew
-    name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
-    replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
+    name_template: >-
+      {{ .Binary }}_
+      {{- if eq .Os "darwin" }}Darwin
+      {{- else if eq .Os "linux" }}Linux
+      {{- else if eq .Os "windows" }}Windows
+      {{- else }}{{ .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
     files:
       - README.md
       - data/*
-    format: zip
+    formats:
+      - zip
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  version_template: "{{ .Tag }}-next"
 changelog:
   sort: asc
   filters:
@@ -49,7 +58,7 @@ env_files:
 brews:
   - name: gigamock
     # Github repository to push the tap to.
-    tap:
+    repository:
       owner: NickTaporuk
       name: homebrew-tap
 
@@ -61,7 +70,7 @@ brews:
       name: NickTaporuk
       email: nictaporuk@gmail.com
 
-    folder: Formula
+    directory: Formula
     caveats: "How to use this binary"
     description: "Software to make a mock of REST API or work with kafka messages."
     install: |
