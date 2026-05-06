@@ -72,9 +72,15 @@ examples/grpc/customer-service-unary.yaml
 examples/grpc/chat-service-bidi-stream.yaml
 ```
 
-These files define the planned production-ready gRPC mock format. They are
-indexed and shown in the control UI. The real gRPC runtime is still a future
-implementation step.
+These files define real gRPC mocks. They are indexed, shown in the control UI,
+and served from the gRPC listener.
+
+```bash
+grpcurl -plaintext \
+  -d '{"customerId":"customer-1"}' \
+  localhost:7778 \
+  customers.CustomersService/GetCustomer
+```
 
 ## Kafka
 

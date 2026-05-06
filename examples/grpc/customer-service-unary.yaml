@@ -3,7 +3,9 @@ method: POST
 type: grpc
 description: "Unary gRPC mock for retrieving a customer by id"
 proto:
-  descriptorSet: "./examples/grpc/proto/customers.pb"
+  file: "customers.proto"
+  importPaths:
+    - "./examples/grpc/proto"
   service: "customers.CustomersService"
   method: "GetCustomer"
 scenarios:

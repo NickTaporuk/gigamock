@@ -30,6 +30,7 @@ type App struct {
 type Config struct {
 	ServerIP          string
 	ServerPort        string
+	GRPCServerPort    string
 	DirPaths          []string
 	LoggerLevel       string
 	LoggerPrettyPrint bool
@@ -58,6 +59,7 @@ func DefaultConfig() (Config, error) {
 	return Config{
 		ServerIP:          "0.0.0.0",
 		ServerPort:        ":7777",
+		GRPCServerPort:    ":7778",
 		DirPaths:          []string{path},
 		LoggerLevel:       "DEBUG",
 		LoggerPrettyPrint: false,
@@ -103,7 +105,7 @@ func (a App) RunWithConfig(cfg Config) error {
 
 	di := server.NewDispatcher(a.ctx, files, router, lgr)
 
-	di.Start(cfg.ServerIP + cfg.ServerPort)
+	di.Start(cfg.ServerIP+cfg.ServerPort, cfg.ServerIP+cfg.GRPCServerPort)
 
 	return nil
 }

@@ -3,7 +3,9 @@ method: POST
 type: grpc
 description: "Bidirectional gRPC stream mock with scripted receive/send steps"
 proto:
-  descriptorSet: "./examples/grpc/proto/chat.pb"
+  file: "chat.proto"
+  importPaths:
+    - "./examples/grpc/proto"
   service: "chat.ChatService"
   method: "Chat"
 scenarios:

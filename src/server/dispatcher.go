@@ -304,8 +304,8 @@ func (di *Dispatcher) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// Start initialize the HTTP mock server
-func (di Dispatcher) Start(addr string) {
+// Start initialize the HTTP and gRPC mock servers.
+func (di Dispatcher) Start(addr string, grpcAddr string) {
 	var wait time.Duration
 
 	srv := &http.Server{
@@ -314,6 +314,19 @@ func (di Dispatcher) Start(addr string) {
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
+	}
+
+	grpcServer, grpcListener, err := di.startGRPCServer(grpcAddr)
+	if err != nil {
+		di.logger.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"trace":  string(debug.Stack()),
+				"addr":   grpcAddr,
+				"action": "di.startGRPCServer(grpcAddr)",
+				"method": "func (di Dispatcher) Start(addr string, grpcAddr string)",
+			}).
+			Fatal("gRPC server start retrieved an error")
 	}
 
 	go func() {
@@ -349,7 +362,7 @@ func (di Dispatcher) Start(addr string) {
 	defer cancel()
 	// Doesn't block if no connections, but will otherwise wait
 	// until the timeout deadline.
-	err := srv.Shutdown(ctx)
+	err = srv.Shutdown(ctx)
 	if err != nil {
 		di.logger.
 			WithError(err).
@@ -358,6 +371,12 @@ func (di Dispatcher) Start(addr string) {
 				"action": "srv.Shutdown(ctx)",
 				"method": "func (di Dispatcher) Start(addr string)",
 			}).Fatal("shutting down")
+	}
+	if grpcServer != nil {
+		grpcServer.GracefulStop()
+	}
+	if grpcListener != nil {
+		grpcListener.Close()
 	}
 
 	di.logger.Info("shutting down")

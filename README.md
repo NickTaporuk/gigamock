@@ -5,8 +5,8 @@
 
 Gigamock is a production-ready mock server foundation for describing predictable
 responses from configuration files. It can be used today for HTTP REST mocks,
-GraphQL-over-HTTP mocks, Kafka producer/consumer scenarios, and as a control
-plane for planned gRPC and broker-based mocks.
+GraphQL-over-HTTP mocks, dynamic gRPC mocks, Kafka producer/consumer scenarios,
+and as a control plane for broker-based mocks.
 
 Mock behavior is described in YAML or JSON files. At runtime Gigamock indexes
 the configured files, serves mock responses, and exposes an internal control UI
@@ -29,8 +29,8 @@ Current runtime status by scenario type:
 - `graphql`: production-ready GraphQL-over-HTTP response mocking with
   `operationName`, `query`, and `variables` matching
 - `kafka`: runtime producer/consumer scenario support
-- `grpc`: production-ready YAML contract and UI indexing; native gRPC runtime
-  is planned
+- `grpc`: production-ready dynamic gRPC runtime for unary and scripted streaming
+  mocks loaded from `.proto` files
 - `nats`: production-ready YAML contract and UI indexing; native NATS runtime is
   planned
 - `rabbitmq`: production-ready YAML contract and UI indexing; native RabbitMQ
@@ -53,6 +53,7 @@ Available flags:
 go run ./cmd \
   -server-ip 0.0.0.0 \
   -server-port :7777 \
+  -grpc-server-port :7778 \
   -dir-path ./config \
   -logger-level DEBUG \
   -logger-pretty-print=false
@@ -133,10 +134,10 @@ Ready-to-read YAML examples are available in the `examples` directory:
   testing the control UI scenario switcher.
 - `examples/graphql/starwars-operations.yaml`: GraphQL mock with
   `operationName`, `query`, and `variables` request matching.
-- `examples/grpc/customer-service-unary.yaml`: planned production-ready unary
-  gRPC mock format driven by protobuf descriptors.
-- `examples/grpc/chat-service-bidi-stream.yaml`: planned bidirectional gRPC
-  stream mock format with scripted receive/send steps.
+- `examples/grpc/customer-service-unary.yaml`: real unary gRPC mock driven by a
+  `.proto` file.
+- `examples/grpc/chat-service-bidi-stream.yaml`: real bidirectional gRPC stream
+  mock with scripted receive/send steps.
 - `examples/kafka/test-topic.yaml`: Kafka producer/consumer scenario.
 - `examples/nats/order-created.yaml`: planned NATS publish scenario format.
 - `examples/rabbitmq/payment-events.yaml`: planned RabbitMQ publish scenario
@@ -239,23 +240,16 @@ curl -X POST http://localhost:7777/internal/v1/in-memory \
   }'
 ```
 
-## gRPC Mocking Direction
+## gRPC Mocks
 
-The recommended production-ready gRPC design is a dynamic mock engine driven by
-`.proto` descriptors instead of generated Go mocks per service.
+Gigamock starts a real gRPC server beside the HTTP control plane. By default the
+HTTP server listens on `:7777` and the gRPC server listens on `:7778`.
 
-Target behavior:
+gRPC mocks are dynamic: Gigamock loads `.proto` files at startup, registers the
+described services on a `grpc.Server`, enables reflection for `grpcurl`, decodes
+requests with protobuf reflection, and builds YAML responses with `protojson`.
 
-- start a real gRPC server beside the existing HTTP server
-- load service and message descriptors from `.proto` files or descriptor sets
-- match calls by full method name, for example `/customers.CustomersService/Get`
-- decode requests with protobuf reflection
-- build responses from human-readable YAML/JSON using `protojson`
-- support multiple scenarios per endpoint
-- allow the control UI to switch active gRPC scenarios the same way it switches
-  HTTP scenarios
-
-Suggested future unary gRPC mock format:
+Unary gRPC mock format:
 
 ```yaml
 path: "/customers.CustomersService/GetCustomer"
@@ -263,7 +257,11 @@ method: POST
 type: grpc
 description: "mock GetCustomer gRPC method"
 proto:
-  descriptorSet: "./proto/customers.pb"
+  file: "customers.proto"
+  importPaths:
+    - "./examples/grpc/proto"
+  service: "customers.CustomersService"
+  method: "GetCustomer"
 scenarios:
   - name: "default customer"
     request:
@@ -286,7 +284,30 @@ scenarios:
       message: "customer not found"
 ```
 
-For bidirectional streaming, the recommended format is a scripted state machine:
+Call it with:
+
+```bash
+go run ./cmd --dir-path ./examples/grpc
+
+grpcurl -plaintext \
+  -d '{"customerId":"customer-1"}' \
+  localhost:7778 \
+  customers.CustomersService/GetCustomer
+```
+
+Switch the active scenario through the HTTP control API:
+
+```bash
+curl -X POST http://localhost:7777/internal/v1/in-memory \
+  -H "Content-Type: application/json" \
+  -d '{
+    "path": "/customers.CustomersService/GetCustomer",
+    "method": "POST",
+    "scenarioNumber": 2
+  }'
+```
+
+For bidirectional streaming, use a scripted state machine:
 
 ```yaml
 path: "/chat.ChatService/Chat"
@@ -294,7 +315,11 @@ method: POST
 type: grpc
 description: "mock bidirectional chat stream"
 proto:
-  descriptorSet: "./proto/chat.pb"
+  file: "chat.proto"
+  importPaths:
+    - "./examples/grpc/proto"
+  service: "chat.ChatService"
+  method: "Chat"
 scenarios:
   - name: "happy path"
     stream:
@@ -311,9 +336,9 @@ scenarios:
             code: OK
 ```
 
-The current UI/control API is already shaped so these future `type: grpc`
-scenario files can be listed and switched by endpoint once the gRPC runtime
-engine is added.
+Streaming scenarios support `sendOnConnect`, ordered `steps`, and `onReceive`
+rules. The active stream scenario can be switched from the same UI/API as HTTP
+and GraphQL scenarios.
 
 ## Download
 

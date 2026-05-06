@@ -62,9 +62,9 @@ tasks:
       - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/graphql
 
   run:grpc:
-    desc: Run gRPC contract examples
+    desc: Run real gRPC examples
     cmds:
-      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/grpc
+      - go run ./cmd --server-port :{{.PORT}} --grpc-server-port :7778 --dir-path ./examples/grpc
 
   run:kafka:
     desc: Run Kafka examples
@@ -145,7 +145,7 @@ tasks:
   docker:run:grpc:
     desc: Run gRPC Docker image
     cmds:
-      - docker run --rm -p {{.PORT}}:7777 gigamock-grpc
+      - docker run --rm -p {{.PORT}}:7777 -p 7778:7778 gigamock-grpc
 
   docker:run:kafka:
     desc: Run Kafka Docker image

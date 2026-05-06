@@ -1,8 +1,8 @@
 # gRPC Scenario Fields
 
-gRPC scenarios define the planned production-ready gRPC mock contract.
-Gigamock currently indexes these files and displays them in the control UI.
-Native gRPC runtime serving is planned.
+gRPC scenarios define production-ready dynamic gRPC mocks. Gigamock loads
+`.proto` files, registers services on a real `grpc.Server`, exposes reflection
+for `grpcurl`, and uses YAML scenarios to build protobuf responses.
 
 Unary example:
 
@@ -12,7 +12,9 @@ method: POST
 type: grpc
 description: "Unary gRPC mock for retrieving a customer by id"
 proto:
-  descriptorSet: "./examples/grpc/proto/customers.pb"
+  file: "customers.proto"
+  importPaths:
+    - "./examples/grpc/proto"
   service: "customers.CustomersService"
   method: "GetCustomer"
 scenarios:
@@ -38,18 +40,18 @@ Top-level fields:
 | `method` | yes | HTTP-facing index method. Use `POST`. |
 | `type` | yes | Must be `grpc`. |
 | `description` | no | Text shown in the control UI. |
-| `proto` | planned | Protobuf descriptor configuration. |
+| `proto` | yes | Protobuf source configuration. |
 | `scenarios` | yes | Ordered list of gRPC scenarios. |
 
 `proto` fields:
 
 | Field | Required | Description |
 | --- | --- | --- |
-| `descriptorSet` | planned | Path to compiled protobuf descriptor set. |
-| `file` | planned | Path to `.proto` file if direct proto parsing is supported. |
-| `importPaths` | planned | Import paths for direct `.proto` parsing. |
-| `service` | planned | Fully qualified service name. |
-| `method` | planned | RPC method name. |
+| `file` | yes | `.proto` file to compile. |
+| `importPaths` | yes | Import paths used to resolve `file` and its imports. |
+| `service` | yes | Fully qualified service name. |
+| `method` | yes | RPC method name. |
+| `descriptorSet` | no | Reserved for future descriptor-set loading. |
 
 Unary scenario fields:
 
@@ -79,4 +81,27 @@ Example files:
 ```text
 examples/grpc/customer-service-unary.yaml
 examples/grpc/chat-service-bidi-stream.yaml
+```
+
+Real gRPC request example:
+
+```bash
+go run ./cmd --dir-path ./examples/grpc
+
+grpcurl -plaintext \
+  -d '{"customerId":"customer-1"}' \
+  localhost:7778 \
+  customers.CustomersService/GetCustomer
+```
+
+Switch a gRPC scenario at runtime:
+
+```bash
+curl -X POST http://localhost:7777/internal/v1/in-memory \
+  -H "Content-Type: application/json" \
+  -d '{
+    "path": "/customers.CustomersService/GetCustomer",
+    "method": "POST",
+    "scenarioNumber": 2
+  }'
 ```

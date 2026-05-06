@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine AS build
+FROM golang:1.23-alpine AS build
 
 WORKDIR /src
 COPY go.mod go.sum ./
@@ -12,5 +12,5 @@ WORKDIR /app
 COPY --from=build /out/gigamock /usr/local/bin/gigamock
 COPY examples/grpc /app/examples/grpc
 
-EXPOSE 7777
-CMD ["gigamock", "--server-ip", "0.0.0.0", "--server-port", ":7777", "--dir-path", "/app/examples/grpc"]
+EXPOSE 7777 7778
+CMD ["gigamock", "--server-ip", "0.0.0.0", "--server-port", ":7777", "--grpc-server-port", ":7778", "--dir-path", "/app/examples/grpc"]

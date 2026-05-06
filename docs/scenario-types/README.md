@@ -30,7 +30,7 @@ Runtime status:
 | `http` | Runtime provider implemented. |
 | `graphql` | Runtime provider implemented over HTTP. |
 | `kafka` | Runtime producer/consumer provider implemented. |
-| `grpc` | YAML contract and UI indexing implemented; native gRPC runtime planned. |
+| `grpc` | Dynamic unary and scripted streaming gRPC runtime implemented from `.proto` files. |
 | `nats` | YAML contract and UI indexing implemented; native NATS runtime planned. |
 | `rabbitmq` | YAML contract and UI indexing implemented; native RabbitMQ runtime planned. |
 | `mqtt` | YAML contract and UI indexing implemented; native MQTT runtime planned. |
