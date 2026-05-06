@@ -5,9 +5,12 @@ import (
 	"testing"
 
 	"github.com/NickTaporuk/gigamock/src/fileType"
+	"github.com/sirupsen/logrus"
 )
 
 func TestFactory(t *testing.T) {
+	lgr := logrus.NewEntry(logrus.New())
+
 	type args struct {
 		ext string
 	}
@@ -20,13 +23,13 @@ func TestFactory(t *testing.T) {
 		{
 			name:    "positive scenario should be retrieved existing provider yaml",
 			args:    args{ext: fileType.FileExtensionYAML},
-			want:    NewYAMLProvider(),
+			want:    NewYAMLProvider(lgr),
 			wantErr: false,
 		},
 		{
 			name:    "positive scenario should be retrieved existing provider json",
 			args:    args{ext: fileType.FileExtensionJSON},
-			want:    NewJSONProvider(),
+			want:    NewJSONProvider(lgr),
 			wantErr: false,
 		},
 		{
@@ -42,7 +45,7 @@ func TestFactory(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Factory(tt.args.ext)
+			got, err := Factory(tt.args.ext, lgr)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Factory() error = %v, wantErr %v", err, tt.wantErr)
 				return

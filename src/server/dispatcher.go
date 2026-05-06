@@ -43,9 +43,19 @@ func NewDispatcher(
 
 // inMemoryHandlers
 func (di *Dispatcher) inMemoryHandlers(w http.ResponseWriter, req *http.Request) (bool, error) {
+	if req.URL.Path == "/internal/v1/mock-ui" && req.Method == http.MethodGet {
+		serveMockUI(w, req)
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/scenarios" && req.Method == http.MethodGet {
+		h := inMemory.NewHandler(&di.indexedFiles, di.logger)
+		h.Details(w, req)
+		return true, nil
+	}
 
 	if req.URL.Path == "/internal/v1/in-memory" {
-		h := inMemory.NewHandler(&di.indexedFiles)
+		h := inMemory.NewHandler(&di.indexedFiles, di.logger)
 		switch req.Method {
 		case http.MethodPost:
 			h.AddRecord(w, req)
@@ -291,7 +301,7 @@ func (di *Dispatcher) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-//Start initialize the HTTP mock server
+// Start initialize the HTTP mock server
 func (di Dispatcher) Start(addr string) {
 	var wait time.Duration
 
@@ -304,12 +314,17 @@ func (di Dispatcher) Start(addr string) {
 	}
 
 	go func() {
+		di.logger.Info("Ready to accept connections")
 		if err := srv.ListenAndServe(); err != nil {
+			if err == http.ErrServerClosed {
+				return
+			}
+
 			di.logger.
 				WithError(err).
 				WithFields(logrus.Fields{
 					"trace":  string(debug.Stack()),
-					"srv":    srv,
+					"addr":   addr,
 					"action": "srv.ListenAndServe()",
 					"method": "func (di Dispatcher) Start(addr string)",
 					"stack":  string(debug.Stack()),

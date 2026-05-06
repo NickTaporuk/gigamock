@@ -10,6 +10,8 @@ func Factory(ext string, lgr *logrus.Entry) (FileProvider, error) {
 	switch ext {
 	case fileType.FileExtensionYAML:
 		return NewYAMLProvider(lgr), nil
+	case fileType.FileExtensionYML:
+		return NewYAMLProvider(lgr), nil
 	case fileType.FileExtensionJSON:
 		return NewJSONProvider(lgr), nil
 	default:

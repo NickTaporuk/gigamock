@@ -1,0 +1,70 @@
+path: "/graphql"
+method: POST
+type: graphql
+description: "GraphQL mock with operationName and variables matching"
+scenarios:
+  - name: "get hero by episode"
+    request:
+      operationName: "GetHero"
+      query: |
+        query GetHero($episode: String!) {
+          hero(episode: $episode) {
+            id
+            name
+          }
+        }
+      variables:
+        episode: "NEWHOPE"
+    response:
+      statusCode: 200
+      headers:
+        Content-Type: "application/json"
+      body: |
+        {
+          "data": {
+            "hero": {
+              "id": "1000",
+              "name": "Luke Skywalker"
+            }
+          }
+        }
+
+  - name: "get villain"
+    request:
+      operationName: "GetVillain"
+      query: |
+        query GetVillain {
+          villain {
+            id
+            name
+          }
+        }
+    response:
+      statusCode: 200
+      headers:
+        Content-Type: "application/json"
+      body: |
+        {
+          "data": {
+            "villain": {
+              "id": "1001",
+              "name": "Darth Vader"
+            }
+          }
+        }
+
+  - name: "graphql error"
+    request:
+      operationName: "BrokenQuery"
+    response:
+      statusCode: 200
+      headers:
+        Content-Type: "application/json"
+      body: |
+        {
+          "errors": [
+            {
+              "message": "Cannot query field brokenField on type Query"
+            }
+          ]
+        }

@@ -1,0 +1,48 @@
+path: "/control-ui/users"
+method: GET
+type: http
+description: "HTTP example with multiple scenarios for testing the control UI"
+scenarios:
+  - name: "active users"
+    request:
+    response:
+      statusCode: 200
+      headers:
+        Content-Type: "application/json"
+      body: |
+        {
+          "users": [
+            {
+              "id": "user-1",
+              "name": "Luke Skywalker",
+              "status": "ACTIVE"
+            },
+            {
+              "id": "user-2",
+              "name": "Leia Organa",
+              "status": "ACTIVE"
+            }
+          ]
+        }
+
+  - name: "empty list"
+    request:
+    response:
+      statusCode: 200
+      headers:
+        Content-Type: "application/json"
+      body: |
+        {
+          "users": []
+        }
+
+  - name: "temporary error"
+    request:
+    response:
+      statusCode: 503
+      headers:
+        Content-Type: "application/json"
+      body: |
+        {
+          "error": "users service is temporarily unavailable"
+        }

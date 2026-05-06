@@ -1,0 +1,33 @@
+path: "/internal/rabbitmq/payments/:paymentID"
+method: POST
+type: rabbitmq
+description: "RabbitMQ mock scenario for publishing payment events"
+scenarios:
+  - name: "publish payment captured"
+    url: "amqp://guest:guest@localhost:5672/"
+    exchange: "payments"
+    routingKey: "payments.captured"
+    headers:
+      X-Request-Id: "831429af-1e40-4b44-8be3-06fd252578b0"
+    message:
+      contentType: "application/json"
+      body: |
+        {
+          "paymentId": "payment-1",
+          "orderId": "order-1",
+          "status": "CAPTURED"
+        }
+
+  - name: "publish payment failed"
+    url: "amqp://guest:guest@localhost:5672/"
+    exchange: "payments"
+    routingKey: "payments.failed"
+    message:
+      contentType: "application/json"
+      body: |
+        {
+          "paymentId": "payment-1",
+          "orderId": "order-1",
+          "status": "FAILED",
+          "reason": "insufficient funds"
+        }

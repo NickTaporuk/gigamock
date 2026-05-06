@@ -1,0 +1,56 @@
+path: "/chat.ChatService/Chat"
+method: POST
+type: grpc
+description: "Bidirectional gRPC stream mock with scripted receive/send steps"
+proto:
+  descriptorSet: "./examples/grpc/proto/chat.pb"
+  service: "chat.ChatService"
+  method: "Chat"
+scenarios:
+  - name: "happy path"
+    stream:
+      sendOnConnect:
+        - text: "connected"
+          sender: "mock-server"
+      steps:
+        - receive:
+            text: "hello"
+            sender: "client"
+        - send:
+            text: "hi"
+            sender: "mock-server"
+        - receive:
+            text: "ping"
+            sender: "client"
+        - send:
+            text: "pong"
+            sender: "mock-server"
+        - close:
+            code: OK
+
+  - name: "validation error"
+    stream:
+      steps:
+        - receive:
+            text: ""
+        - close:
+            code: INVALID_ARGUMENT
+            message: "text is required"
+
+  - name: "server initiated messages"
+    stream:
+      sendOnConnect:
+        - text: "welcome"
+          sender: "mock-server"
+        - text: "send any message to continue"
+          sender: "mock-server"
+      onReceive:
+        - match:
+            text: "status"
+          send:
+            text: "all systems operational"
+            sender: "mock-server"
+        - match:
+            text: "bye"
+          close:
+            code: OK

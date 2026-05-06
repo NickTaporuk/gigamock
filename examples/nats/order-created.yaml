@@ -1,0 +1,27 @@
+path: "/internal/nats/orders/:orderID"
+method: POST
+type: nats
+description: "NATS mock scenario for publishing an order-created event"
+scenarios:
+  - name: "publish order created"
+    host: "nats://localhost:4222"
+    subject: "orders.created"
+    headers:
+      X-Request-Id: "831429af-1e40-4b44-8be3-06fd252578b0"
+    message:
+      body: |
+        {
+          "orderId": "order-1",
+          "customerId": "customer-1",
+          "status": "CREATED"
+        }
+
+  - name: "publish order rejected"
+    host: "nats://localhost:4222"
+    subject: "orders.rejected"
+    message:
+      body: |
+        {
+          "orderId": "order-1",
+          "reason": "payment declined"
+        }

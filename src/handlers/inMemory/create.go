@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	// errParticularRouteNotFound is used to return error if particular route isn't found
 	errParticularRouteNotFound = errors.New("particular route isn't found")
 )
 
@@ -22,7 +23,7 @@ type Request struct {
 type AddRecordResponse struct {
 	Route  string `json:"route"`
 	Method string `json:"method"`
-	Error  string `json:"error, omitempty"`
+	Error  string `json:"error,omitempty"`
 }
 
 // AddRecord is a handler to create a new record or update existed one for in-memory store data
