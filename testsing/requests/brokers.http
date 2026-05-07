@@ -6,8 +6,18 @@
 #   --dir-path ./examples/rabbitmq \
 #   --dir-path ./examples/mqtt
 #
-# Kafka has runtime support. NATS/RabbitMQ/MQTT are indexed/control-plane mocks
-# and currently return 501 when called through HTTP.
+# Kafka, NATS, RabbitMQ, and MQTT have runtime support. Dry-run routes work
+# without a running broker.
+
+###
+# Kafka dry-run topic, works without a running Kafka broker
+GET {{host}}internal/kafka/dry-run/message-1
+Accept: application/json
+
+###
+# Kafka docker-compose end-to-end topic
+GET {{host}}internal/kafka/docker/message-1
+Accept: application/json
 
 ###
 # Kafka topic test-topic
@@ -20,7 +30,16 @@ GET {{host}}internal/queue2/message-2
 Accept: application/json
 
 ###
-# NATS order-created scenario, HTTP-facing placeholder
+# NATS dry-run publish, works without a running NATS broker
+POST {{host}}internal/nats/dry-run/orders/order-1
+Content-Type: application/json
+
+{
+  "orderId": "order-1"
+}
+
+###
+# NATS order-created scenario, requires a running NATS broker
 POST {{host}}internal/nats/orders/order-1
 Content-Type: application/json
 
@@ -29,7 +48,16 @@ Content-Type: application/json
 }
 
 ###
-# RabbitMQ payment event scenario, HTTP-facing placeholder
+# RabbitMQ dry-run publish, works without a running RabbitMQ broker
+POST {{host}}internal/rabbitmq/dry-run/payments/payment-1
+Content-Type: application/json
+
+{
+  "paymentId": "payment-1"
+}
+
+###
+# RabbitMQ payment event scenario, requires a running RabbitMQ broker
 POST {{host}}internal/rabbitmq/payments/payment-1
 Content-Type: application/json
 
@@ -38,12 +66,41 @@ Content-Type: application/json
 }
 
 ###
-# MQTT device telemetry scenario, HTTP-facing placeholder
+# MQTT dry-run publish, works without a running MQTT broker
+POST {{host}}internal/mqtt/dry-run/devices/device-1/telemetry
+Content-Type: application/json
+
+{
+  "deviceId": "device-1"
+}
+
+###
+# MQTT device telemetry scenario, requires a running MQTT broker
 POST {{host}}internal/mqtt/devices/device-1/telemetry
 Content-Type: application/json
 
 {
   "deviceId": "device-1"
 }
+
+###
+# Kafka runtime metrics
+GET {{host}}internal/v1/kafka/metrics
+Accept: application/json
+
+###
+# NATS runtime metrics
+GET {{host}}internal/v1/nats/metrics
+Accept: application/json
+
+###
+# RabbitMQ runtime metrics
+GET {{host}}internal/v1/rabbitmq/metrics
+Accept: application/json
+
+###
+# MQTT runtime metrics
+GET {{host}}internal/v1/mqtt/metrics
+Accept: application/json
 
 ###

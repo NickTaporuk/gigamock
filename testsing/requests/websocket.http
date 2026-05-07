@@ -1,0 +1,20 @@
+###
+# Run WebSocket examples:
+# go run ./cmd --dir-path ./examples/websocket
+
+###
+# WebSocket dry-run route
+GET {{host}}ws/dry-run/chat
+Accept: application/json
+
+###
+# WebSocket runtime metrics
+GET {{host}}internal/v1/websocket/metrics
+Accept: application/json
+
+###
+# Real WebSocket CLI check:
+# printf '{"sender":"client","text":"ping"}\n' | websocat ws://localhost:7777/ws/chat
+#
+# Alternative with wscat:
+# npx wscat -c ws://localhost:7777/ws/chat

@@ -12,6 +12,7 @@ docker build -f deployment/docker/types/kafka/Dockerfile -t gigamock-kafka .
 docker build -f deployment/docker/types/nats/Dockerfile -t gigamock-nats .
 docker build -f deployment/docker/types/rabbitmq/Dockerfile -t gigamock-rabbitmq .
 docker build -f deployment/docker/types/mqtt/Dockerfile -t gigamock-mqtt .
+docker build -f deployment/docker/types/websocket/Dockerfile -t gigamock-websocket .
 ```
 
 Run example:

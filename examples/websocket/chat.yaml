@@ -1,0 +1,30 @@
+path: "/ws/chat"
+method: GET
+type: websocket
+description: "Scripted WebSocket chat mock with connect, receive, send, and close steps"
+scenarios:
+  - name: "ping pong chat"
+    sendOnConnect:
+      - type: "text"
+        text: "{\"sender\":\"mock-server\",\"text\":\"connected\"}"
+    steps:
+      - receive:
+          type: "text"
+          text: "{\"sender\":\"client\",\"text\":\"ping\"}"
+      - send:
+          type: "text"
+          text: "{\"sender\":\"mock-server\",\"text\":\"pong\"}"
+      - close:
+          code: 1000
+          reason: "scenario completed"
+
+  - name: "server greeting only"
+    sendOnConnect:
+      - type: "text"
+        text: "{\"sender\":\"mock-server\",\"text\":\"hello\"}"
+      - type: "text"
+        text: "{\"sender\":\"mock-server\",\"text\":\"waiting for client\"}"
+    steps:
+      - close:
+          code: 1000
+          reason: "greeting sent"

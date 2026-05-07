@@ -1,0 +1,21 @@
+path: "/internal/mqtt/dry-run/devices/:deviceID/telemetry"
+method: POST
+type: mqtt
+description: "MQTT dry-run publish scenario for local route and UI testing without a broker"
+scenarios:
+  - name: "dry-run temperature telemetry"
+    broker: "tcp://localhost:1883"
+    clientID: "gigamock-device-telemetry-dry-run"
+    topic: "devices/device-1/telemetry/dry-run"
+    qos: 1
+    retained: false
+    dryRun: true
+    message:
+      contentType: "application/json"
+      body: |
+        {
+          "deviceId": "device-1",
+          "temperature": 21.7,
+          "humidity": 42.5,
+          "dryRun": true
+        }

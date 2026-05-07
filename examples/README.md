@@ -13,7 +13,8 @@ go run ./cmd \
   --dir-path ./examples/kafka \
   --dir-path ./examples/nats \
   --dir-path ./examples/rabbitmq \
-  --dir-path ./examples/mqtt
+  --dir-path ./examples/mqtt \
+  --dir-path ./examples/websocket
 ```
 
 Open the control UI:
@@ -112,52 +113,155 @@ grpcurl -plaintext \
 
 ## Kafka
 
-File:
+Files:
 
 ```text
+examples/kafka/dry-run-topic.yaml
+examples/kafka/docker-topic.yaml
 examples/kafka/test-topic.yaml
 ```
 
-This is the current Kafka producer/consumer scenario format.
+`dry-run-topic.yaml` is useful for local smoke tests and CI because it does not
+require a running Kafka broker. `test-topic.yaml` uses the real producer/consumer
+runtime and requires Kafka on the configured host/port.
 
-Request that triggers the configured Kafka scenario:
+Request that works without Kafka:
+
+```bash
+curl http://localhost:7777/internal/kafka/dry-run/message-1
+```
+
+Request that triggers the real Kafka scenario:
 
 ```bash
 curl http://localhost:7777/internal/queue/message-1
 ```
 
+Metrics:
+
+```bash
+curl http://localhost:7777/internal/v1/kafka/metrics
+```
+
+Full Docker flow with Kafka broker and Gigamock:
+
+```bash
+task docker:kafka:up
+```
+
+Then in another terminal:
+
+```bash
+curl http://localhost:7777/internal/kafka/docker/message-1
+curl http://localhost:7777/internal/v1/kafka/metrics
+```
+
 ## NATS
 
-File:
+Files:
 
 ```text
+examples/nats/dry-run-order-created.yaml
 examples/nats/order-created.yaml
 ```
 
-This file defines the planned NATS publish scenario format. It is indexed and
-shown in the control UI. The real NATS runtime is still a future implementation
-step.
+`dry-run-order-created.yaml` works without a running NATS broker. `order-created.yaml`
+uses the real NATS publish runtime and requires a broker on the configured URL.
+
+Request that works without NATS:
+
+```bash
+curl -X POST http://localhost:7777/internal/nats/dry-run/orders/order-1 \
+  -H "Content-Type: application/json" \
+  -d '{"orderId":"order-1"}'
+```
+
+Metrics:
+
+```bash
+curl http://localhost:7777/internal/v1/nats/metrics
+```
 
 ## RabbitMQ
 
-File:
+Files:
 
 ```text
+examples/rabbitmq/dry-run-payment-events.yaml
 examples/rabbitmq/payment-events.yaml
 ```
 
-This file defines the planned RabbitMQ publish scenario format. It is indexed
-and shown in the control UI. The real RabbitMQ runtime is still a future
-implementation step.
+`dry-run-payment-events.yaml` works without a running RabbitMQ broker.
+`payment-events.yaml` uses the real RabbitMQ publish runtime and requires a
+broker on the configured URL.
+
+Request that works without RabbitMQ:
+
+```bash
+curl -X POST http://localhost:7777/internal/rabbitmq/dry-run/payments/payment-1 \
+  -H "Content-Type: application/json" \
+  -d '{"paymentId":"payment-1"}'
+```
+
+Metrics:
+
+```bash
+curl http://localhost:7777/internal/v1/rabbitmq/metrics
+```
 
 ## MQTT
 
-File:
+Files:
 
 ```text
+examples/mqtt/dry-run-device-telemetry.yaml
 examples/mqtt/device-telemetry.yaml
 ```
 
-This file defines the planned MQTT publish scenario format. It is indexed and
-shown in the control UI. The real MQTT runtime is still a future implementation
-step.
+`dry-run-device-telemetry.yaml` works without a running MQTT broker.
+`device-telemetry.yaml` uses the real MQTT publish runtime and requires a broker
+on the configured URL.
+
+Request that works without MQTT:
+
+```bash
+curl -X POST http://localhost:7777/internal/mqtt/dry-run/devices/device-1/telemetry \
+  -H "Content-Type: application/json" \
+  -d '{"deviceId":"device-1"}'
+```
+
+Metrics:
+
+```bash
+curl http://localhost:7777/internal/v1/mqtt/metrics
+```
+
+## WebSocket
+
+Files:
+
+```text
+examples/websocket/chat.yaml
+examples/websocket/dry-run-chat.yaml
+```
+
+`dry-run-chat.yaml` works without a WebSocket client. `chat.yaml` upgrades the
+HTTP route to WebSocket and executes scripted receive/send/close steps.
+
+Dry-run request:
+
+```bash
+curl http://localhost:7777/ws/dry-run/chat
+```
+
+Real WebSocket request:
+
+```bash
+printf '{"sender":"client","text":"ping"}\n' | websocat ws://localhost:7777/ws/chat
+```
+
+Metrics:
+
+```bash
+curl http://localhost:7777/internal/v1/websocket/metrics
+```

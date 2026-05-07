@@ -70,6 +70,48 @@ func (di *Dispatcher) inMemoryHandlers(w http.ResponseWriter, req *http.Request)
 		return true, nil
 	}
 
+	if req.URL.Path == "/internal/v1/graphql/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.GraphQLMetricsSnapshot())
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/kafka/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.KafkaMetricsSnapshot())
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/nats/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.NATSMetricsSnapshot())
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/rabbitmq/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.RabbitMQMetricsSnapshot())
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/mqtt/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.MQTTMetricsSnapshot())
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/websocket/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.WebSocketMetricsSnapshot())
+		return true, nil
+	}
+
 	if req.URL.Path == "/internal/v1/in-memory" {
 		h := inMemory.NewHandler(&di.indexedFiles, di.logger)
 		switch req.Method {

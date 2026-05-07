@@ -13,9 +13,10 @@ Each scenario type has its own reference page:
 | GraphQL | [GraphQL scenarios](scenario-types/graphql.md) | [`examples/graphql`](../examples/graphql) | Runtime implemented |
 | gRPC | [gRPC scenarios](scenario-types/grpc.md) | [`examples/grpc`](../examples/grpc) | Runtime implemented |
 | Kafka | [Kafka scenarios](scenario-types/kafka.md) | [`examples/kafka`](../examples/kafka) | Runtime implemented |
-| NATS | [NATS scenarios](scenario-types/nats.md) | [`examples/nats`](../examples/nats) | Contract and UI indexing |
-| RabbitMQ | [RabbitMQ scenarios](scenario-types/rabbitmq.md) | [`examples/rabbitmq`](../examples/rabbitmq) | Contract and UI indexing |
-| MQTT | [MQTT scenarios](scenario-types/mqtt.md) | [`examples/mqtt`](../examples/mqtt) | Contract and UI indexing |
+| NATS | [NATS scenarios](scenario-types/nats.md) | [`examples/nats`](../examples/nats) | Runtime implemented |
+| RabbitMQ | [RabbitMQ scenarios](scenario-types/rabbitmq.md) | [`examples/rabbitmq`](../examples/rabbitmq) | Runtime implemented |
+| MQTT | [MQTT scenarios](scenario-types/mqtt.md) | [`examples/mqtt`](../examples/mqtt) | Runtime implemented |
+| WebSocket | [WebSocket scenarios](scenario-types/websocket.md) | [`examples/websocket`](../examples/websocket) | Runtime implemented |
 
 ## Common References
 

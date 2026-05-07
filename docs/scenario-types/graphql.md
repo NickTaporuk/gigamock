@@ -65,7 +65,7 @@ Request fields:
 | `operationName` | no | GraphQL operation name to match. |
 | `query` | no | GraphQL query. Whitespace is normalized before matching. |
 | `variables` | no | JSON-like variables map to match. |
-| `headers` | no | Expected request headers. |
+| `headers` | no | Expected request headers. Header matching is enforced when configured. |
 | `body` | no | Raw body, mostly descriptive. |
 
 Response fields:
@@ -79,12 +79,46 @@ Response fields:
 Matching behavior:
 
 - Gigamock first tries the currently active scenario.
-- If the active scenario request does not match the incoming GraphQL payload,
+- If the active scenario is `0` and its request does not match the incoming GraphQL payload,
   Gigamock searches the other scenarios for a matching `operationName`, `query`,
-  and `variables`.
+- `query`, `variables`, and configured `headers`.
+- If a non-zero scenario is selected through the control API/UI, that scenario
+  is returned directly. This makes manual error-state testing predictable.
+- Batched GraphQL HTTP requests are supported when the body is a JSON array.
+- Invalid JSON returns `400` with a GraphQL-style `errors` response.
+
+Metrics:
+
+```bash
+curl http://localhost:7777/internal/v1/graphql/metrics
+```
+
+Metrics are grouped by GraphQL HTTP endpoint and include calls, errors,
+matched requests, unmatched requests, batch calls, invalid JSON, and forced
+active scenario selections.
 
 Example file:
 
 ```text
 examples/graphql/starwars-operations.yaml
+```
+
+Batch request example:
+
+```bash
+curl -X POST http://localhost:7777/graphql \
+  -H "Content-Type: application/json" \
+  -d '[
+    {
+      "operationName": "GetHero",
+      "query": "query GetHero($episode: String!) { hero(episode: $episode) { id name } }",
+      "variables": {
+        "episode": "NEWHOPE"
+      }
+    },
+    {
+      "operationName": "GetVillain",
+      "query": "query GetVillain { villain { id name } }"
+    }
+  ]'
 ```

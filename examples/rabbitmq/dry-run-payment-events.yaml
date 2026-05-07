@@ -1,0 +1,21 @@
+path: "/internal/rabbitmq/dry-run/payments/:paymentID"
+method: POST
+type: rabbitmq
+description: "RabbitMQ dry-run publish scenario for local route and UI testing without a broker"
+scenarios:
+  - name: "dry-run payment captured"
+    url: "amqp://guest:guest@localhost:5672/"
+    exchange: "payments"
+    routingKey: "payments.captured.dry-run"
+    dryRun: true
+    headers:
+      X-Request-Id: "dry-run-request"
+    message:
+      contentType: "application/json"
+      body: |
+        {
+          "paymentId": "payment-1",
+          "orderId": "order-1",
+          "status": "CAPTURED",
+          "dryRun": true
+        }

@@ -27,11 +27,13 @@ func Factory(
 	case common.GRPCScenarioType:
 		return NewGRPCTypeProvider(w), nil
 	case common.NATSScenarioType:
-		return NewMessageBrokerTypeProvider(w, common.NATSScenarioType), nil
+		return NewNATSProvider(w, lgr, ctx), nil
 	case common.RabbitMQScenarioType:
-		return NewMessageBrokerTypeProvider(w, common.RabbitMQScenarioType), nil
+		return NewRabbitMQProvider(w, lgr, ctx), nil
 	case common.MQTTScenarioType:
-		return NewMessageBrokerTypeProvider(w, common.MQTTScenarioType), nil
+		return NewMQTTProvider(w, lgr, ctx), nil
+	case common.WebSocketScenarioType:
+		return NewWebSocketProvider(w, req, lgr, ctx), nil
 	}
 
 	return nil, errors.New("scenario type provider is not reachable")

@@ -15,4 +15,6 @@ const (
 	RabbitMQScenarioType = "rabbitmq"
 	// MQTTScenarioType represents type "mqtt" for a scenario
 	MQTTScenarioType = "mqtt"
+	// WebSocketScenarioType represents type "websocket" for a scenario
+	WebSocketScenarioType = "websocket"
 )

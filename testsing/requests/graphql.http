@@ -35,6 +35,41 @@ Content-Type: application/json
 }
 
 ###
+# GraphQL header-matched private hero
+POST {{host}}graphql
+Content-Type: application/json
+X-Tenant: jedi
+
+{
+  "operationName": "PrivateHero",
+  "query": "query PrivateHero { privateHero { id name } }"
+}
+
+###
+# GraphQL batch request
+POST {{host}}graphql
+Content-Type: application/json
+
+[
+  {
+    "operationName": "GetHero",
+    "query": "query GetHero($episode: String!) { hero(episode: $episode) { id name } }",
+    "variables": {
+      "episode": "NEWHOPE"
+    }
+  },
+  {
+    "operationName": "GetVillain",
+    "query": "query GetVillain { villain { id name } }"
+  }
+]
+
+###
+# GraphQL metrics
+GET {{host}}internal/v1/graphql/metrics
+Accept: application/json
+
+###
 # Legacy GraphQL example endpoint
 POST {{host}}ui/v1/graphQL?param1=test1
 Content-Type: application/json

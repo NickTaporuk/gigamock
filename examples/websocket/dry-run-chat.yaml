@@ -1,0 +1,20 @@
+path: "/ws/dry-run/chat"
+method: GET
+type: websocket
+description: "WebSocket dry-run example for local route and UI testing without a WebSocket client"
+scenarios:
+  - name: "dry-run chat script"
+    dryRun: true
+    sendOnConnect:
+      - type: "text"
+        text: "{\"sender\":\"mock-server\",\"text\":\"connected\"}"
+    steps:
+      - receive:
+          type: "text"
+          text: "{\"sender\":\"client\",\"text\":\"ping\"}"
+      - send:
+          type: "text"
+          text: "{\"sender\":\"mock-server\",\"text\":\"pong\"}"
+      - close:
+          code: 1000
+          reason: "scenario completed"

@@ -5,8 +5,8 @@
 
 Gigamock is a production-ready mock server foundation for describing predictable
 responses from configuration files. It can be used today for HTTP REST mocks,
-GraphQL-over-HTTP mocks, dynamic gRPC mocks, Kafka producer/consumer scenarios,
-and as a control plane for broker-based mocks.
+GraphQL-over-HTTP mocks, dynamic gRPC mocks, scripted WebSocket mocks, Kafka
+producer/consumer scenarios, and as a control plane for broker-based mocks.
 
 Mock behavior is described in YAML or JSON files. At runtime Gigamock indexes
 the configured files, serves mock responses, and exposes an internal control UI
@@ -28,15 +28,14 @@ Current runtime status by scenario type:
 - `http`: production-ready HTTP response mocking
 - `graphql`: production-ready GraphQL-over-HTTP response mocking with
   `operationName`, `query`, and `variables` matching
-- `kafka`: runtime producer/consumer scenario support
+- `kafka`: runtime producer/consumer scenario support with local dry-run mode
 - `grpc`: production-ready dynamic gRPC runtime for unary and scripted streaming
   mocks loaded from `.proto` files
-- `nats`: production-ready YAML contract and UI indexing; native NATS runtime is
-  planned
-- `rabbitmq`: production-ready YAML contract and UI indexing; native RabbitMQ
-  runtime is planned
-- `mqtt`: production-ready YAML contract and UI indexing; native MQTT runtime is
-  planned
+- `nats`: runtime publish scenario support with local dry-run mode
+- `rabbitmq`: runtime publish scenario support with local dry-run mode
+- `mqtt`: runtime publish scenario support with local dry-run mode
+- `websocket`: runtime scripted bidirectional WebSocket support with local
+  dry-run mode
 
 ## Run
 
@@ -75,7 +74,8 @@ go run ./cmd \
   --dir-path ./examples/kafka \
   --dir-path ./examples/nats \
   --dir-path ./examples/rabbitmq \
-  --dir-path ./examples/mqtt
+  --dir-path ./examples/mqtt \
+  --dir-path ./examples/websocket
 ```
 
 Print console help:
@@ -106,6 +106,7 @@ Detailed field references are split by scenario type:
 | NATS | [NATS scenarios](docs/scenario-types/nats.md) | [`examples/nats`](examples/nats) |
 | RabbitMQ | [RabbitMQ scenarios](docs/scenario-types/rabbitmq.md) | [`examples/rabbitmq`](examples/rabbitmq) |
 | MQTT | [MQTT scenarios](docs/scenario-types/mqtt.md) | [`examples/mqtt`](examples/mqtt) |
+| WebSocket | [WebSocket scenarios](docs/scenario-types/websocket.md) | [`examples/websocket`](examples/websocket) |
 
 The full documentation index is available in [`docs/README.md`](docs/README.md).
 
@@ -127,11 +128,23 @@ Ready-to-read YAML examples are available in the `examples` directory:
   gRPC mock.
 - `examples/grpc/chat-service-bidi-stream.yaml`: real bidirectional gRPC stream
   mock with scripted receive/send steps.
-- `examples/kafka/test-topic.yaml`: Kafka producer/consumer scenario.
-- `examples/nats/order-created.yaml`: planned NATS publish scenario format.
-- `examples/rabbitmq/payment-events.yaml`: planned RabbitMQ publish scenario
-  format.
-- `examples/mqtt/device-telemetry.yaml`: planned MQTT publish scenario format.
+- `examples/kafka/dry-run-topic.yaml`: Kafka producer dry-run scenario that
+  works without a running Kafka broker.
+- `examples/kafka/docker-topic.yaml`: Kafka producer scenario for the
+  Docker Compose end-to-end stack.
+- `examples/kafka/test-topic.yaml`: real Kafka producer/consumer scenario.
+- `examples/nats/dry-run-order-created.yaml`: NATS dry-run publish scenario
+  that works without a running NATS broker.
+- `examples/nats/order-created.yaml`: real NATS publish scenario.
+- `examples/rabbitmq/dry-run-payment-events.yaml`: RabbitMQ dry-run publish
+  scenario that works without a running RabbitMQ broker.
+- `examples/rabbitmq/payment-events.yaml`: real RabbitMQ publish scenario.
+- `examples/mqtt/dry-run-device-telemetry.yaml`: MQTT dry-run publish scenario
+  that works without a running MQTT broker.
+- `examples/mqtt/device-telemetry.yaml`: real MQTT publish scenario.
+- `examples/websocket/dry-run-chat.yaml`: WebSocket dry-run scenario.
+- `examples/websocket/chat.yaml`: real scripted bidirectional WebSocket
+  scenario.
 
 ## Acceptance Specs And Docker
 
@@ -172,6 +185,8 @@ The UI shows:
 - description
 - source YAML/JSON file
 - active scenario selector
+- runtime metrics for gRPC, GraphQL, Kafka, NATS, RabbitMQ, MQTT, and WebSocket
+- live metrics updates without refreshing the page
 
 Changing the selected scenario updates the in-memory route store. The mock
 server starts using the selected scenario immediately.
@@ -188,6 +203,7 @@ examples:
 - [NATS scenarios](docs/scenario-types/nats.md)
 - [RabbitMQ scenarios](docs/scenario-types/rabbitmq.md)
 - [MQTT scenarios](docs/scenario-types/mqtt.md)
+- [WebSocket scenarios](docs/scenario-types/websocket.md)
 
 ## Internal API
 
@@ -201,6 +217,80 @@ List UI-friendly scenario details:
 
 ```bash
 curl http://localhost:7777/internal/v1/scenarios
+```
+
+Kafka dry-run smoke test:
+
+```bash
+curl http://localhost:7777/internal/kafka/dry-run/message-1
+curl http://localhost:7777/internal/v1/kafka/metrics
+```
+
+Kafka Docker end-to-end smoke test:
+
+```bash
+task docker:kafka:up
+```
+
+Then in another terminal:
+
+```bash
+curl http://localhost:7777/internal/kafka/docker/message-1
+curl http://localhost:7777/internal/v1/kafka/metrics
+```
+
+Stop the stack:
+
+```bash
+task docker:kafka:down
+```
+
+If `7777` is busy:
+
+```bash
+PORT=7781 task docker:kafka:up
+PORT=7781 task docker:kafka:test
+PORT=7781 task docker:kafka:down
+```
+
+NATS dry-run smoke test:
+
+```bash
+curl -X POST http://localhost:7777/internal/nats/dry-run/orders/order-1 \
+  -H "Content-Type: application/json" \
+  -d '{"orderId":"order-1"}'
+curl http://localhost:7777/internal/v1/nats/metrics
+```
+
+RabbitMQ dry-run smoke test:
+
+```bash
+curl -X POST http://localhost:7777/internal/rabbitmq/dry-run/payments/payment-1 \
+  -H "Content-Type: application/json" \
+  -d '{"paymentId":"payment-1"}'
+curl http://localhost:7777/internal/v1/rabbitmq/metrics
+```
+
+MQTT dry-run smoke test:
+
+```bash
+curl -X POST http://localhost:7777/internal/mqtt/dry-run/devices/device-1/telemetry \
+  -H "Content-Type: application/json" \
+  -d '{"deviceId":"device-1"}'
+curl http://localhost:7777/internal/v1/mqtt/metrics
+```
+
+WebSocket dry-run smoke test:
+
+```bash
+curl http://localhost:7777/ws/dry-run/chat
+curl http://localhost:7777/internal/v1/websocket/metrics
+```
+
+Real WebSocket smoke test:
+
+```bash
+printf '{"sender":"client","text":"ping"}\n' | websocat ws://localhost:7777/ws/chat
 ```
 
 Set active scenario for an endpoint:
@@ -244,9 +334,6 @@ brew upgrade gigamock
 
 ## Roadmap
 
-- NATS runtime publisher/subscriber provider
-- RabbitMQ runtime publisher/consumer provider
-- MQTT runtime publisher/subscriber provider
 - Swagger/OpenAPI parser for generating mock scenarios
 
 ## License

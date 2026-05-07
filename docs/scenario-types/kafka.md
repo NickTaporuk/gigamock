@@ -1,7 +1,9 @@
 # Kafka Scenario Fields
 
 Kafka scenarios can prepare a topic, publish messages, and optionally run a
-consumer logger.
+consumer logger. For local route/UI testing without a Kafka broker, use
+`dryRun: true`; the mock will validate the scenario, skip network calls, and
+return a successful JSON response.
 
 Example:
 
@@ -15,6 +17,7 @@ scenarios:
     port: "9092"
     topic: "test-topic"
     delay: 100s
+    dryRun: false
     producer:
       partition: 1
       headers:
@@ -46,6 +49,7 @@ Scenario fields:
 | `port` | yes | Kafka port. |
 | `topic` | yes | Kafka topic. |
 | `delay` | no | Planned delay between operations. |
+| `dryRun` | no | When `true`, skips Kafka broker calls and returns a successful response. Useful for local smoke tests and CI. |
 | `producer` | no | Producer configuration. |
 | `consumer` | no | Consumer configuration. |
 
@@ -71,9 +75,66 @@ Consumer fields:
 | --- | --- | --- |
 | `cli` | no | Whether to log consumed messages to the CLI. |
 
+Runtime responses:
+
+Successful producer response:
+
+```json
+{
+  "topic": "test-topic",
+  "produced": true,
+  "dryRun": false
+}
+```
+
+Dry-run producer response:
+
+```json
+{
+  "topic": "gigamock-dry-run",
+  "produced": true,
+  "dryRun": true
+}
+```
+
+Runtime metrics:
+
+```bash
+curl http://localhost:7777/internal/v1/kafka/metrics
+```
+
+Docker end-to-end flow:
+
+```bash
+task docker:kafka:up
+```
+
+In another terminal:
+
+```bash
+curl http://localhost:7777/internal/kafka/docker/message-1
+curl http://localhost:7777/internal/v1/kafka/metrics
+```
+
+Stop the stack:
+
+```bash
+task docker:kafka:down
+```
+
+If port `7777` is busy, run the stack on another port:
+
+```bash
+PORT=7781 task docker:kafka:up
+PORT=7781 task docker:kafka:test
+PORT=7781 task docker:kafka:down
+```
+
 Example files:
 
 ```text
+examples/kafka/docker-topic.yaml
+examples/kafka/dry-run-topic.yaml
 examples/kafka/test-topic.yaml
 examples/kafka/test-duplicate-consumer-topic.yaml
 ```

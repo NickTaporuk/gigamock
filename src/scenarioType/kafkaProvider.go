@@ -2,20 +2,37 @@ package scenarioType
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 	"runtime/debug"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/NickTaporuk/gigamock/src/scenarios"
-	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
 )
 
 var runnedConsumers map[string]bool
+
+type kafkaMetrics struct {
+	mu     sync.RWMutex
+	Topics map[string]*kafkaMetric `json:"topics"`
+}
+
+type kafkaMetric struct {
+	Calls         int64 `json:"calls"`
+	Produced      int64 `json:"produced"`
+	Consumed      int64 `json:"consumed"`
+	Errors        int64 `json:"errors"`
+	TopicsCreated int64 `json:"topicsCreated"`
+}
+
+var kafkaRuntimeMetrics = &kafkaMetrics{Topics: map[string]*kafkaMetric{}}
 
 // KafkaProvider is an implementation of  the interface TypeProvider
 // this provider is responsible to run a scenario with type kafka
@@ -50,11 +67,32 @@ func (k *KafkaProvider) Retrieve(scenarioNumber int) {
 	// else if I have the type equal consumer
 	// I should to show in console a message which was retrieved from kafka server
 
-	scenario := k.scenarios[scenarioNumber]
+	started := time.Now()
+	scenario, err := k.scenarioByNumber(scenarioNumber)
+	if err != nil {
+		k.recordKafkaMetric("unknown", kafkaMetric{Calls: 1, Errors: 1})
+		k.logger.WithError(err).Error("kafka scenario selection failed")
+		k.retrieveErrorResponse()
+		return
+	}
+	k.recordKafkaMetric(scenario.Topic, kafkaMetric{Calls: 1})
+	defer func() {
+		k.logger.WithFields(logrus.Fields{
+			"topic":    scenario.Topic,
+			"duration": time.Since(started).String(),
+		}).Info("Kafka scenario completed")
+	}()
 
 	if scenario.Producer != nil {
+		if scenario.DryRun {
+			k.recordKafkaMetric(scenario.Topic, kafkaMetric{Produced: 1})
+			k.writeSuccessResponse(scenario, true)
+			return
+		}
+
 		err := k.prepareTopic(&scenario)
 		if err != nil {
+			k.recordKafkaMetric(scenario.Topic, kafkaMetric{Errors: 1})
 			k.logger.
 				WithError(err).
 				WithFields(logrus.Fields{
@@ -74,6 +112,7 @@ func (k *KafkaProvider) Retrieve(scenarioNumber int) {
 
 		err = k.writeMessage(scenario, msg)
 		if err != nil {
+			k.recordKafkaMetric(scenario.Topic, kafkaMetric{Errors: 1})
 			k.logger.
 				WithError(err).
 				WithFields(logrus.Fields{
@@ -97,6 +136,7 @@ func (k *KafkaProvider) Retrieve(scenarioNumber int) {
 				if _, ok := runnedConsumers[scenario.Topic]; !ok {
 					err = k.prepareTopic(&scenario)
 					if err != nil {
+						k.recordKafkaMetric(scenario.Topic, kafkaMetric{Errors: 1})
 						k.logger.
 							WithError(err).
 							WithFields(logrus.Fields{
@@ -118,10 +158,11 @@ func (k *KafkaProvider) Retrieve(scenarioNumber int) {
 					})
 
 					for {
-						m, err := reader.ReadMessage(context.Background())
+						m, err := reader.ReadMessage(k.context())
 						if err != nil {
 							break
 						}
+						k.recordKafkaMetric(scenario.Topic, kafkaMetric{Consumed: 1})
 
 						k.logger.Info(fmt.Sprintf("message at topic/partition/offset/headers %v/%v/%v: %s = %s, %#v\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value), m.Headers))
 					}
@@ -142,8 +183,18 @@ func (k *KafkaProvider) Retrieve(scenarioNumber int) {
 			}()
 		}
 
-		k.w.WriteHeader(http.StatusOK)
+		k.writeSuccessResponse(scenario, false)
 	}
+}
+
+func (k KafkaProvider) scenarioByNumber(scenarioNumber int) (scenarios.KafkaScenario, error) {
+	if len(k.scenarios) == 0 {
+		return scenarios.KafkaScenario{}, fmt.Errorf("kafka scenarios are empty")
+	}
+	if scenarioNumber < 0 || scenarioNumber >= len(k.scenarios) {
+		return k.scenarios[0], nil
+	}
+	return k.scenarios[scenarioNumber], nil
 }
 
 func (k *KafkaProvider) prepareTopic(scenario *scenarios.KafkaScenario) error {
@@ -192,6 +243,7 @@ func (k *KafkaProvider) prepareTopic(scenario *scenarios.KafkaScenario) error {
 
 			return err
 		}
+		k.recordKafkaMetric(scenario.Topic, kafkaMetric{TopicsCreated: 1})
 	}
 
 	return nil
@@ -212,7 +264,7 @@ func (k *KafkaProvider) writeMessage(scenario scenarios.KafkaScenario, msg kafka
 		Balancer: &kafka.LeastBytes{},
 	}
 
-	err := w.WriteMessages(context.Background(),
+	err := w.WriteMessages(k.context(),
 		// NOTE: Each Message has Topic defined, otherwise an error is returned.
 		msg,
 	)
@@ -229,6 +281,7 @@ func (k *KafkaProvider) writeMessage(scenario scenarios.KafkaScenario, msg kafka
 
 		return err
 	}
+	k.recordKafkaMetric(scenario.Topic, kafkaMetric{Produced: 1})
 	if err := w.Close(); err != nil {
 		k.logger.
 			WithError(err).
@@ -267,7 +320,8 @@ func (k *KafkaProvider) prepareHeaders(scenario scenarios.KafkaScenario, msg *ka
 func (k *KafkaProvider) listTopics(conn *kafka.Conn, topic string) bool {
 	partitions, err := conn.ReadPartitions()
 	if err != nil {
-		panic(err.Error())
+		k.logger.WithError(err).Error("kafka ReadPartitions failed")
+		return false
 	}
 
 	m := map[string]struct{}{}
@@ -314,11 +368,71 @@ func (k *KafkaProvider) createTopic(conn *kafka.Conn, topic string) error {
 }
 
 func (k *KafkaProvider) retrieveErrorResponse() {
+	k.w.Header().Set("Content-Type", "application/json")
 	k.w.WriteHeader(http.StatusInternalServerError)
+	json.NewEncoder(k.w).Encode(map[string]string{"error": "kafka scenario failed"})
 }
+
+func (k *KafkaProvider) writeSuccessResponse(scenario scenarios.KafkaScenario, dryRun bool) {
+	k.w.Header().Set("Content-Type", "application/json")
+	k.w.WriteHeader(http.StatusOK)
+	json.NewEncoder(k.w).Encode(map[string]interface{}{
+		"topic":    scenario.Topic,
+		"produced": true,
+		"dryRun":   dryRun,
+	})
+}
+
 func (k KafkaProvider) Validate() error {
-	return validation.ValidateStruct(
-		&k,
-		validation.Field(&k.scenarios),
-	)
+	if len(k.scenarios) == 0 {
+		return fmt.Errorf("kafka scenarios are required")
+	}
+	for index, scenario := range k.scenarios {
+		if err := scenario.Validate(); err != nil {
+			return fmt.Errorf("kafka scenario %d is invalid: %w", index, err)
+		}
+	}
+	return nil
+}
+
+func (k KafkaProvider) context() context.Context {
+	if k.ctx == nil {
+		return context.Background()
+	}
+	return k.ctx
+}
+
+func (k KafkaProvider) recordKafkaMetric(topic string, delta kafkaMetric) {
+	recordKafkaMetric(topic, delta)
+}
+
+func recordKafkaMetric(topic string, delta kafkaMetric) {
+	if topic == "" {
+		topic = "unknown"
+	}
+	kafkaRuntimeMetrics.mu.Lock()
+	defer kafkaRuntimeMetrics.mu.Unlock()
+
+	metric, ok := kafkaRuntimeMetrics.Topics[topic]
+	if !ok {
+		metric = &kafkaMetric{}
+		kafkaRuntimeMetrics.Topics[topic] = metric
+	}
+	metric.Calls += delta.Calls
+	metric.Produced += delta.Produced
+	metric.Consumed += delta.Consumed
+	metric.Errors += delta.Errors
+	metric.TopicsCreated += delta.TopicsCreated
+}
+
+// KafkaMetricsSnapshot returns a copy of Kafka runtime metrics.
+func KafkaMetricsSnapshot() map[string]kafkaMetric {
+	kafkaRuntimeMetrics.mu.RLock()
+	defer kafkaRuntimeMetrics.mu.RUnlock()
+
+	out := make(map[string]kafkaMetric, len(kafkaRuntimeMetrics.Topics))
+	for topic, metric := range kafkaRuntimeMetrics.Topics {
+		out[topic] = *metric
+	}
+	return out
 }

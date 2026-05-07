@@ -1,0 +1,19 @@
+path: "/internal/nats/dry-run/orders/:orderID"
+method: POST
+type: nats
+description: "NATS dry-run publish scenario for local route and UI testing without a broker"
+scenarios:
+  - name: "dry-run order created"
+    host: "nats://localhost:4222"
+    subject: "orders.created.dry-run"
+    dryRun: true
+    headers:
+      X-Request-Id: "dry-run-request"
+    message:
+      body: |
+        {
+          "orderId": "order-1",
+          "customerId": "customer-1",
+          "status": "CREATED",
+          "dryRun": true
+        }

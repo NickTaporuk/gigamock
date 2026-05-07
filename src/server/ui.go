@@ -62,7 +62,7 @@ const mockUIHTML = `<!doctype html>
     }
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) 160px 220px auto;
+      grid-template-columns: minmax(220px, 1fr) 160px 220px auto auto;
       gap: 10px;
       align-items: center;
     }
@@ -92,6 +92,33 @@ const mockUIHTML = `<!doctype html>
       background: var(--accent);
       color: #fff;
     }
+    .live-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--ok);
+      box-shadow: 0 0 0 4px rgba(2, 122, 72, .12);
+    }
+    .live-status.paused .live-dot {
+      background: var(--muted);
+      box-shadow: none;
+    }
+    .live-status.error {
+      color: var(--danger);
+    }
+    .live-status.error .live-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(180, 35, 24, .1);
+    }
     main {
       max-width: 1180px;
       margin: 0 auto;
@@ -100,6 +127,73 @@ const mockUIHTML = `<!doctype html>
     .summary {
       color: var(--muted);
       margin-bottom: 14px;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .metric-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      min-width: 0;
+    }
+    .metric-card h2 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      line-height: 1.2;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+    .metric-list {
+      display: grid;
+      gap: 8px;
+    }
+    .metric-row {
+      display: grid;
+      gap: 8px;
+      align-items: start;
+      border-top: 1px solid var(--line);
+      padding-top: 8px;
+    }
+    .metric-row:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+    .metric-key {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.35;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .metric-values {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 6px;
+    }
+    .metric-pill {
+      display: inline-flex;
+      align-items: center;
+      height: 22px;
+      padding: 0 7px;
+      border-radius: 999px;
+      background: #f2f4f7;
+      color: #344054;
+      font-size: 12px;
+      font-weight: 680;
+      max-width: 100%;
+      min-width: 0;
+      white-space: normal;
+    }
+    .metric-empty {
+      color: var(--muted);
+      font-size: 13px;
     }
     .grid {
       display: grid;
@@ -203,6 +297,7 @@ const mockUIHTML = `<!doctype html>
     }
     @media (max-width: 760px) {
       .bar, .endpoint { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: 1fr; }
       .toolbar { grid-template-columns: 1fr; align-items: stretch; }
       input { width: 100%; }
       .control { min-width: 0; }
@@ -218,36 +313,105 @@ const mockUIHTML = `<!doctype html>
         <select id="typeFilter" aria-label="Filter by type"></select>
         <select id="serviceFilter" aria-label="Filter by service"></select>
         <button id="refresh" class="primary" type="button">Refresh</button>
+        <span id="liveStatus" class="live-status"><span class="live-dot"></span><span>Live</span></span>
       </div>
     </div>
   </header>
   <main>
     <div id="summary" class="summary">Loading scenarios...</div>
+    <section id="metrics" class="metrics" aria-live="polite"></section>
     <section id="endpoints" class="grid" aria-live="polite"></section>
   </main>
   <script>
     const endpointsEl = document.querySelector("#endpoints");
+    const metricsEl = document.querySelector("#metrics");
     const summaryEl = document.querySelector("#summary");
     const searchEl = document.querySelector("#search");
     const typeFilterEl = document.querySelector("#typeFilter");
     const serviceFilterEl = document.querySelector("#serviceFilter");
     const refreshEl = document.querySelector("#refresh");
+    const liveStatusEl = document.querySelector("#liveStatus");
     let endpoints = [];
+    let metrics = {};
+    let metricsPolling = false;
+    const metricsIntervalMs = 2000;
 
     async function load() {
       summaryEl.textContent = "Loading scenarios...";
       endpointsEl.innerHTML = "";
+      metricsEl.innerHTML = "";
       try {
-        const response = await fetch("/internal/v1/scenarios");
+        const [response, metricsData] = await Promise.all([
+          fetch("/internal/v1/scenarios"),
+          loadMetrics(),
+        ]);
         if (!response.ok) throw new Error(await response.text());
         const data = await response.json();
         endpoints = data.endpoints || [];
+        metrics = metricsData;
         populateFilters();
         render();
       } catch (error) {
         summaryEl.textContent = "Failed to load scenarios: " + error.message;
         endpointsEl.innerHTML = "";
+        metricsEl.innerHTML = "";
       }
+    }
+
+    async function refreshMetrics() {
+      if (metricsPolling || document.hidden) return;
+      metricsPolling = true;
+      setLiveStatus("updating");
+      try {
+        metrics = await loadMetrics();
+        renderMetrics();
+        setLiveStatus("live");
+      } catch (error) {
+        setLiveStatus("error");
+      } finally {
+        metricsPolling = false;
+      }
+    }
+
+    async function loadMetrics() {
+      const result = {};
+      const configs = [
+        ["grpc", "/internal/v1/grpc/metrics"],
+        ["graphql", "/internal/v1/graphql/metrics"],
+        ["kafka", "/internal/v1/kafka/metrics"],
+        ["nats", "/internal/v1/nats/metrics"],
+        ["rabbitmq", "/internal/v1/rabbitmq/metrics"],
+        ["mqtt", "/internal/v1/mqtt/metrics"],
+        ["websocket", "/internal/v1/websocket/metrics"],
+      ];
+      await Promise.all(configs.map(async ([type, url]) => {
+        try {
+          const response = await fetch(url);
+          result[type] = response.ok ? await response.json() : {};
+        } catch (_) {
+          result[type] = {};
+        }
+      }));
+      return result;
+    }
+
+    function setLiveStatus(state) {
+      liveStatusEl.className = "live-status";
+      if (state === "paused") {
+        liveStatusEl.classList.add("paused");
+        liveStatusEl.lastElementChild.textContent = "Paused";
+        return;
+      }
+      if (state === "error") {
+        liveStatusEl.classList.add("error");
+        liveStatusEl.lastElementChild.textContent = "Live error";
+        return;
+      }
+      if (state === "updating") {
+        liveStatusEl.lastElementChild.textContent = "Updating";
+        return;
+      }
+      liveStatusEl.lastElementChild.textContent = "Live";
     }
 
     function render() {
@@ -272,6 +436,7 @@ const mockUIHTML = `<!doctype html>
       });
 
       summaryEl.textContent = visible.length + " of " + endpoints.length + " endpoints" + summarySuffix(selectedType, selectedService);
+      renderMetrics();
       if (visible.length === 0) {
         endpointsEl.innerHTML = '<div class="empty">No mock endpoints found</div>';
         return;
@@ -284,6 +449,37 @@ const mockUIHTML = `<!doctype html>
         const button = card.querySelector("button");
         button.addEventListener("click", () => updateScenario(endpoint, Number(select.value), card));
       }
+    }
+
+    function renderMetrics() {
+      metricsEl.innerHTML = [
+        metricCard("gRPC", metrics.grpc || {}),
+        metricCard("GraphQL", metrics.graphql || {}),
+        metricCard("Kafka", metrics.kafka || {}),
+        metricCard("NATS", metrics.nats || {}),
+        metricCard("RabbitMQ", metrics.rabbitmq || {}),
+        metricCard("MQTT", metrics.mqtt || {}),
+        metricCard("WebSocket", metrics.websocket || {}),
+      ].join("");
+    }
+
+    function metricCard(title, data) {
+      const keys = Object.keys(data || {}).sort((a, b) => a.localeCompare(b));
+      const rows = keys.map((key) => metricRow(key, data[key])).join("");
+      return '<article class="metric-card">' +
+        '<h2>' + escapeHtml(title) + '</h2>' +
+        (rows ? '<div class="metric-list">' + rows + '</div>' : '<div class="metric-empty">No runtime calls yet</div>') +
+      '</article>';
+    }
+
+    function metricRow(key, values) {
+      const pills = Object.keys(values || {}).sort((a, b) => a.localeCompare(b)).map((name) => {
+        return '<span class="metric-pill">' + escapeHtml(name) + ': ' + escapeHtml(values[name]) + '</span>';
+      }).join("");
+      return '<div class="metric-row">' +
+        '<div class="metric-key">' + escapeHtml(key) + '</div>' +
+        '<div class="metric-values">' + pills + '</div>' +
+      '</div>';
     }
 
     function endpointTemplate(endpoint) {
@@ -379,7 +575,15 @@ const mockUIHTML = `<!doctype html>
     typeFilterEl.addEventListener("change", render);
     serviceFilterEl.addEventListener("change", render);
     refreshEl.addEventListener("click", load);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        setLiveStatus("paused");
+      } else {
+        refreshMetrics();
+      }
+    });
     load();
+    window.setInterval(refreshMetrics, metricsIntervalMs);
   </script>
 </body>
 </html>`

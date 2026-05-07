@@ -312,6 +312,22 @@ func readGRPCMockFile(filePath string) (grpcMockFile, error) {
 		return grpcMockFile{}, err
 	}
 
+	var probe struct {
+		Type string `json:"type" yaml:"type"`
+	}
+	switch strings.ToLower(filepath.Ext(filePath)) {
+	case ".json":
+		err = json.Unmarshal(raw, &probe)
+	default:
+		err = yaml.Unmarshal(raw, &probe)
+	}
+	if err != nil {
+		return grpcMockFile{}, err
+	}
+	if probe.Type != common.GRPCScenarioType {
+		return grpcMockFile{Type: probe.Type}, nil
+	}
+
 	var config grpcMockFile
 	switch strings.ToLower(filepath.Ext(filePath)) {
 	case ".json":

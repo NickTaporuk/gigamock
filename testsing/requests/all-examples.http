@@ -10,7 +10,8 @@
 #   --dir-path ./examples/kafka \
 #   --dir-path ./examples/nats \
 #   --dir-path ./examples/rabbitmq \
-#   --dir-path ./examples/mqtt
+#   --dir-path ./examples/mqtt \
+#   --dir-path ./examples/websocket
 
 ###
 GET {{host}}internal/v1/scenarios
@@ -33,8 +34,24 @@ Content-Type: application/json
 }
 
 ###
+GET {{host}}internal/kafka/dry-run/message-1
+Accept: application/json
+
+###
+GET {{host}}internal/kafka/docker/message-1
+Accept: application/json
+
+###
 GET {{host}}internal/queue/message-1
 Accept: application/json
+
+###
+POST {{host}}internal/nats/dry-run/orders/order-1
+Content-Type: application/json
+
+{
+  "orderId": "order-1"
+}
 
 ###
 POST {{host}}internal/nats/orders/order-1
@@ -42,6 +59,14 @@ Content-Type: application/json
 
 {
   "orderId": "order-1"
+}
+
+###
+POST {{host}}internal/rabbitmq/dry-run/payments/payment-1
+Content-Type: application/json
+
+{
+  "paymentId": "payment-1"
 }
 
 ###
@@ -53,11 +78,23 @@ Content-Type: application/json
 }
 
 ###
+POST {{host}}internal/mqtt/dry-run/devices/device-1/telemetry
+Content-Type: application/json
+
+{
+  "deviceId": "device-1"
+}
+
+###
 POST {{host}}internal/mqtt/devices/device-1/telemetry
 Content-Type: application/json
 
 {
   "deviceId": "device-1"
 }
+
+###
+GET {{host}}ws/dry-run/chat
+Accept: application/json
 
 ###

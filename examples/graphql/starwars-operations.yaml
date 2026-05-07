@@ -68,3 +68,29 @@ scenarios:
             }
           ]
         }
+
+  - name: "tenant private hero"
+    request:
+      headers:
+        X-Tenant: "jedi"
+      operationName: "PrivateHero"
+      query: |
+        query PrivateHero {
+          privateHero {
+            id
+            name
+          }
+        }
+    response:
+      statusCode: 200
+      headers:
+        Content-Type: "application/json"
+      body: |
+        {
+          "data": {
+            "privateHero": {
+              "id": "1002",
+              "name": "Obi-Wan Kenobi"
+            }
+          }
+        }

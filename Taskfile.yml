@@ -45,6 +45,7 @@ tasks:
         --dir-path ./examples/nats
         --dir-path ./examples/rabbitmq
         --dir-path ./examples/mqtt
+        --dir-path ./examples/websocket
 
   run:examples:
     desc: Run Gigamock with the full examples directory
@@ -86,6 +87,11 @@ tasks:
     cmds:
       - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/mqtt
 
+  run:websocket:
+    desc: Run WebSocket examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/websocket
+
   docker:build:all:
     desc: Build Docker images for all scenario types
     cmds:
@@ -96,6 +102,7 @@ tasks:
       - task: docker:build:nats
       - task: docker:build:rabbitmq
       - task: docker:build:mqtt
+      - task: docker:build:websocket
 
   docker:build:http:
     desc: Build HTTP Docker image
@@ -132,6 +139,11 @@ tasks:
     cmds:
       - docker build -f deployment/docker/types/mqtt/Dockerfile -t gigamock-mqtt .
 
+  docker:build:websocket:
+    desc: Build WebSocket Docker image
+    cmds:
+      - docker build -f deployment/docker/types/websocket/Dockerfile -t gigamock-websocket .
+
   docker:run:http:
     desc: Run HTTP Docker image
     cmds:
@@ -152,6 +164,22 @@ tasks:
     cmds:
       - docker run --rm -p {{.PORT}}:7777 gigamock-kafka
 
+  docker:kafka:up:
+    desc: Run Kafka broker and Gigamock Kafka example stack
+    cmds:
+      - GIGAMOCK_HTTP_PORT={{.PORT}} docker compose -f deployment/docker/example/docker-compose.yaml up --build
+
+  docker:kafka:down:
+    desc: Stop Kafka broker and Gigamock Kafka example stack
+    cmds:
+      - GIGAMOCK_HTTP_PORT={{.PORT}} docker compose -f deployment/docker/example/docker-compose.yaml down -v
+
+  docker:kafka:test:
+    desc: Call the docker-compose Kafka example endpoint and metrics
+    cmds:
+      - curl -sS http://localhost:{{.PORT}}/internal/kafka/docker/message-1
+      - curl -sS http://localhost:{{.PORT}}/internal/v1/kafka/metrics
+
   docker:run:nats:
     desc: Run NATS Docker image
     cmds:
@@ -166,6 +194,11 @@ tasks:
     desc: Run MQTT Docker image
     cmds:
       - docker run --rm -p {{.PORT}}:7777 gigamock-mqtt
+
+  docker:run:websocket:
+    desc: Run WebSocket Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-websocket
 
   features:list:
     desc: List Gherkin feature files

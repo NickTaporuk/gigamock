@@ -1,0 +1,17 @@
+path: "/internal/kafka/dry-run/:messageID"
+method: GET
+type: kafka
+description: "Kafka producer dry-run example for local route and UI testing without a broker"
+scenarios:
+  - name: "dry-run producer response"
+    host: "localhost"
+    port: "9092"
+    topic: "gigamock-dry-run"
+    dryRun: true
+    producer:
+      headers:
+        X-Request-Id: "dry-run-request"
+      message:
+        key: "dry-run-key"
+        value: "{\"event\":\"dry-run\",\"source\":\"gigamock\"}"
+      retry: 1

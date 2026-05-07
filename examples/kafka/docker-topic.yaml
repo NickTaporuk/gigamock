@@ -1,0 +1,16 @@
+path: "/internal/kafka/docker/:messageID"
+method: GET
+type: kafka
+description: "Kafka producer example for the docker-compose end-to-end stack"
+scenarios:
+  - name: "publish message to docker Kafka"
+    host: "kafka"
+    port: "29092"
+    topic: "gigamock-docker-test"
+    producer:
+      headers:
+        X-Request-Id: "docker-flow-request"
+      message:
+        key: "docker-key"
+        value: "{\"event\":\"docker-flow\",\"source\":\"gigamock\"}"
+      retry: 1

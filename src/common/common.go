@@ -22,11 +22,13 @@ const (
 	RabbitMQScenarioType = "rabbitmq"
 	// MQTTScenarioType represents type "mqtt" for a scenario
 	MQTTScenarioType = "mqtt"
+	// WebSocketScenarioType represents type "websocket" for a scenario
+	WebSocketScenarioType = "websocket"
 )
 
 var (
 	// ScenarioTypeValidator is a validator rule for the type of a scenario
-	// can be http, graphql, kafka, grpc, nats, rabbitmq, or mqtt
+	// can be http, graphql, kafka, grpc, nats, rabbitmq, mqtt, or websocket
 	ScenarioTypeValidator = []validation.Rule{
 		validation.Required,
 		validation.In(
@@ -37,6 +39,7 @@ var (
 			NATSScenarioType,
 			RabbitMQScenarioType,
 			MQTTScenarioType,
+			WebSocketScenarioType,
 		),
 	}
 	// ScenarioMethodValidator is a validator rule for the method type of a scenario

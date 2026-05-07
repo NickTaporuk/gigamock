@@ -16,8 +16,68 @@ Useful files:
 - `graphql.http`: GraphQL examples.
 - `grpc.grpc`: IDE gRPC client examples.
 - `grpcurl.sh`: CLI gRPC smoke test with scenario switching.
-- `brokers.http`: Kafka plus broker HTTP-facing checks.
+- `websocket.http`: WebSocket dry-run and CLI smoke commands.
+- `brokers.http`: Kafka/NATS/RabbitMQ/MQTT dry-run, real broker routes, and broker
+  HTTP-facing checks.
 - `all-examples.http`: one file with a small request from each scenario type.
+
+Kafka dry-run check without a broker:
+
+```bash
+curl http://localhost:7777/internal/kafka/dry-run/message-1
+curl http://localhost:7777/internal/v1/kafka/metrics
+```
+
+Kafka end-to-end check with Docker:
+
+```bash
+task docker:kafka:up
+curl http://localhost:7777/internal/kafka/docker/message-1
+curl http://localhost:7777/internal/v1/kafka/metrics
+task docker:kafka:down
+```
+
+Use `PORT=7781 task docker:kafka:up` when `7777` is already occupied.
+
+NATS dry-run check without a broker:
+
+```bash
+curl -X POST http://localhost:7777/internal/nats/dry-run/orders/order-1 \
+  -H "Content-Type: application/json" \
+  -d '{"orderId":"order-1"}'
+curl http://localhost:7777/internal/v1/nats/metrics
+```
+
+RabbitMQ dry-run check without a broker:
+
+```bash
+curl -X POST http://localhost:7777/internal/rabbitmq/dry-run/payments/payment-1 \
+  -H "Content-Type: application/json" \
+  -d '{"paymentId":"payment-1"}'
+curl http://localhost:7777/internal/v1/rabbitmq/metrics
+```
+
+MQTT dry-run check without a broker:
+
+```bash
+curl -X POST http://localhost:7777/internal/mqtt/dry-run/devices/device-1/telemetry \
+  -H "Content-Type: application/json" \
+  -d '{"deviceId":"device-1"}'
+curl http://localhost:7777/internal/v1/mqtt/metrics
+```
+
+WebSocket dry-run check:
+
+```bash
+curl http://localhost:7777/ws/dry-run/chat
+curl http://localhost:7777/internal/v1/websocket/metrics
+```
+
+Real WebSocket check:
+
+```bash
+printf '{"sender":"client","text":"ping"}\n' | websocat ws://localhost:7777/ws/chat
+```
 
 For real gRPC checks:
 
