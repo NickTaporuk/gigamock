@@ -1,0 +1,45 @@
+###
+# Run AWS-compatible examples:
+# go run ./cmd --dir-path ./examples/s3 --dir-path ./examples/sqs --dir-path ./examples/sns
+
+###
+# SQS send message
+POST {{host}}aws/sqs/orders
+Content-Type: application/json
+
+{"orderId":"order-1"}
+
+###
+# SQS dry-run
+POST {{host}}aws/sqs-dry-run/orders
+Accept: application/json
+
+###
+# SQS receive message
+GET {{host}}aws/sqs/orders
+Accept: application/json
+
+###
+# SNS publish
+POST {{host}}aws/sns/order-events
+Content-Type: application/json
+
+{"orderId":"order-1"}
+
+###
+# SNS dry-run
+POST {{host}}aws/sns-dry-run/order-events
+Accept: application/json
+
+###
+# SNS list messages
+GET {{host}}aws/sns/order-events
+Accept: application/json
+
+###
+GET {{host}}internal/v1/sqs/metrics
+Accept: application/json
+
+###
+GET {{host}}internal/v1/sns/metrics
+Accept: application/json

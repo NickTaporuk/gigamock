@@ -11,7 +11,13 @@
 #   --dir-path ./examples/nats \
 #   --dir-path ./examples/rabbitmq \
 #   --dir-path ./examples/mqtt \
-#   --dir-path ./examples/websocket
+#   --dir-path ./examples/websocket \
+#   --dir-path ./examples/s3 \
+#   --dir-path ./examples/sqs \
+#   --dir-path ./examples/sns \
+#   --dir-path ./examples/pubsub \
+#   --dir-path ./examples/azure-servicebus \
+#   --dir-path ./examples/soap
 
 ###
 GET {{host}}internal/v1/scenarios
@@ -96,5 +102,68 @@ Content-Type: application/json
 ###
 GET {{host}}ws/dry-run/chat
 Accept: application/json
+
+###
+PUT {{host}}s3/demo-bucket/readme.txt
+Content-Type: text/plain
+
+hello from gigamock
+
+###
+GET {{host}}s3/demo-bucket/readme.txt
+Accept: text/plain
+
+###
+POST {{host}}aws/sqs/orders
+Content-Type: application/json
+
+{"orderId":"order-1"}
+
+###
+GET {{host}}aws/sqs/orders
+Accept: application/json
+
+###
+POST {{host}}aws/sns/order-events
+Content-Type: application/json
+
+{"orderId":"order-1"}
+
+###
+GET {{host}}aws/sns/order-events
+Accept: application/json
+
+###
+POST {{host}}gcp/pubsub/order-events/publish
+Content-Type: application/json
+
+{"orderId":"order-1"}
+
+###
+POST {{host}}gcp/pubsub/orders-sub/pull
+Accept: application/json
+
+###
+POST {{host}}azure/servicebus/orders/send
+Content-Type: application/json
+
+{"orderId":"order-1"}
+
+###
+POST {{host}}azure/servicebus/orders/receive
+Accept: application/json
+
+###
+POST {{host}}soap/customers
+Content-Type: text/xml; charset=utf-8
+SOAPAction: "GetCustomer"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <GetCustomerRequest xmlns="urn:gigamock:customers">
+      <customerId>customer-1</customerId>
+    </GetCustomerRequest>
+  </soap:Body>
+</soap:Envelope>
 
 ###

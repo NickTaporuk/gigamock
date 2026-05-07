@@ -17,6 +17,12 @@ Each scenario type has its own reference page:
 | RabbitMQ | [RabbitMQ scenarios](scenario-types/rabbitmq.md) | [`examples/rabbitmq`](../examples/rabbitmq) | Runtime implemented |
 | MQTT | [MQTT scenarios](scenario-types/mqtt.md) | [`examples/mqtt`](../examples/mqtt) | Runtime implemented |
 | WebSocket | [WebSocket scenarios](scenario-types/websocket.md) | [`examples/websocket`](../examples/websocket) | Runtime implemented |
+| S3 | [S3 scenarios](scenario-types/s3.md) | [`examples/s3`](../examples/s3) | Runtime implemented |
+| SQS | [SQS scenarios](scenario-types/sqs.md) | [`examples/sqs`](../examples/sqs) | Runtime implemented |
+| SNS | [SNS scenarios](scenario-types/sns.md) | [`examples/sns`](../examples/sns) | Runtime implemented |
+| Google Pub/Sub | [Pub/Sub scenarios](scenario-types/pubsub.md) | [`examples/pubsub`](../examples/pubsub) | Runtime implemented |
+| Azure Service Bus | [Service Bus scenarios](scenario-types/servicebus.md) | [`examples/azure-servicebus`](../examples/azure-servicebus) | Runtime implemented |
+| SOAP | [SOAP scenarios](scenario-types/soap.md) | [`examples/soap`](../examples/soap) | Runtime implemented |
 
 ## Common References
 

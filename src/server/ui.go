@@ -62,9 +62,10 @@ const mockUIHTML = `<!doctype html>
     }
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) 160px 220px auto auto;
+      grid-template-columns: minmax(260px, 1fr) minmax(160px, 160px) minmax(220px, 220px) 104px 72px;
       gap: 10px;
       align-items: center;
+      min-width: 0;
     }
     input, select, button {
       height: 36px;
@@ -73,6 +74,7 @@ const mockUIHTML = `<!doctype html>
       background: #fff;
       color: var(--text);
       font: inherit;
+      min-width: 0;
     }
     input {
       width: 100%;
@@ -86,6 +88,12 @@ const mockUIHTML = `<!doctype html>
       padding: 0 12px;
       cursor: pointer;
       font-weight: 650;
+      width: 100%;
+      white-space: nowrap;
+    }
+    button:disabled {
+      cursor: progress;
+      opacity: .7;
     }
     button.primary {
       border-color: var(--accent);
@@ -100,6 +108,7 @@ const mockUIHTML = `<!doctype html>
       font-size: 12px;
       font-weight: 700;
       white-space: nowrap;
+      width: 72px;
     }
     .live-dot {
       width: 8px;
@@ -334,12 +343,25 @@ const mockUIHTML = `<!doctype html>
     let endpoints = [];
     let metrics = {};
     let metricsPolling = false;
+    let loading = false;
+    let loadRequestId = 0;
+    let metricsSocket = null;
+    let metricsSocketReconnectTimer = null;
+    let metricsFallbackTimer = null;
     const metricsIntervalMs = 2000;
 
     async function load() {
-      summaryEl.textContent = "Loading scenarios...";
-      endpointsEl.innerHTML = "";
-      metricsEl.innerHTML = "";
+      if (loading) return;
+      loading = true;
+      const requestId = ++loadRequestId;
+      const hadContent = endpoints.length > 0;
+      refreshEl.disabled = true;
+      refreshEl.textContent = "Refreshing";
+      if (!hadContent) {
+        summaryEl.textContent = "Loading scenarios...";
+      } else {
+        summaryEl.textContent = "Refreshing scenarios...";
+      }
       try {
         const [response, metricsData] = await Promise.all([
           fetch("/internal/v1/scenarios"),
@@ -347,19 +369,30 @@ const mockUIHTML = `<!doctype html>
         ]);
         if (!response.ok) throw new Error(await response.text());
         const data = await response.json();
+        if (requestId !== loadRequestId) return;
         endpoints = data.endpoints || [];
         metrics = metricsData;
         populateFilters();
         render();
       } catch (error) {
-        summaryEl.textContent = "Failed to load scenarios: " + error.message;
-        endpointsEl.innerHTML = "";
-        metricsEl.innerHTML = "";
+        if (requestId !== loadRequestId) return;
+        summaryEl.textContent = "Failed to refresh scenarios: " + error.message;
+        if (!hadContent) {
+          endpointsEl.innerHTML = "";
+          metricsEl.innerHTML = "";
+        }
+      } finally {
+        if (requestId === loadRequestId) {
+          loading = false;
+          refreshEl.disabled = false;
+          refreshEl.textContent = "Refresh";
+        }
       }
     }
 
     async function refreshMetrics() {
-      if (metricsPolling || document.hidden) return;
+      if (metricsSocket && metricsSocket.readyState === WebSocket.OPEN) return;
+      if (metricsPolling || loading || document.hidden) return;
       metricsPolling = true;
       setLiveStatus("updating");
       try {
@@ -373,6 +406,77 @@ const mockUIHTML = `<!doctype html>
       }
     }
 
+    function connectMetricsSocket() {
+      if (!("WebSocket" in window)) {
+        startMetricsFallback();
+        return;
+      }
+      if (metricsSocket && (metricsSocket.readyState === WebSocket.OPEN || metricsSocket.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      metricsSocket = new WebSocket(protocol + "//" + window.location.host + "/internal/v1/mock-ui/ws");
+
+      metricsSocket.addEventListener("open", () => {
+        stopMetricsFallback();
+        setLiveStatus("live");
+      });
+
+      metricsSocket.addEventListener("message", (event) => {
+        if (loading || document.hidden) return;
+        try {
+          metrics = JSON.parse(event.data || "{}");
+          renderMetrics();
+          setLiveStatus("live");
+        } catch (_) {
+          setLiveStatus("error");
+        }
+      });
+
+      metricsSocket.addEventListener("close", () => {
+        metricsSocket = null;
+        if (!document.hidden) {
+          startMetricsFallback();
+          scheduleMetricsSocketReconnect();
+        }
+      });
+
+      metricsSocket.addEventListener("error", () => {
+        setLiveStatus("error");
+      });
+    }
+
+    function scheduleMetricsSocketReconnect() {
+      if (metricsSocketReconnectTimer) return;
+      metricsSocketReconnectTimer = window.setTimeout(() => {
+        metricsSocketReconnectTimer = null;
+        connectMetricsSocket();
+      }, 3000);
+    }
+
+    function closeMetricsSocket() {
+      if (metricsSocketReconnectTimer) {
+        window.clearTimeout(metricsSocketReconnectTimer);
+        metricsSocketReconnectTimer = null;
+      }
+      if (metricsSocket) {
+        metricsSocket.close();
+        metricsSocket = null;
+      }
+    }
+
+    function startMetricsFallback() {
+      if (metricsFallbackTimer) return;
+      metricsFallbackTimer = window.setInterval(refreshMetrics, metricsIntervalMs);
+    }
+
+    function stopMetricsFallback() {
+      if (!metricsFallbackTimer) return;
+      window.clearInterval(metricsFallbackTimer);
+      metricsFallbackTimer = null;
+    }
+
     async function loadMetrics() {
       const result = {};
       const configs = [
@@ -383,6 +487,12 @@ const mockUIHTML = `<!doctype html>
         ["rabbitmq", "/internal/v1/rabbitmq/metrics"],
         ["mqtt", "/internal/v1/mqtt/metrics"],
         ["websocket", "/internal/v1/websocket/metrics"],
+        ["s3", "/internal/v1/s3/metrics"],
+        ["sqs", "/internal/v1/sqs/metrics"],
+        ["sns", "/internal/v1/sns/metrics"],
+        ["pubsub", "/internal/v1/pubsub/metrics"],
+        ["servicebus", "/internal/v1/servicebus/metrics"],
+        ["soap", "/internal/v1/soap/metrics"],
       ];
       await Promise.all(configs.map(async ([type, url]) => {
         try {
@@ -460,6 +570,12 @@ const mockUIHTML = `<!doctype html>
         metricCard("RabbitMQ", metrics.rabbitmq || {}),
         metricCard("MQTT", metrics.mqtt || {}),
         metricCard("WebSocket", metrics.websocket || {}),
+        metricCard("S3", metrics.s3 || {}),
+        metricCard("SQS", metrics.sqs || {}),
+        metricCard("SNS", metrics.sns || {}),
+        metricCard("Pub/Sub", metrics.pubsub || {}),
+        metricCard("Azure Service Bus", metrics.servicebus || {}),
+        metricCard("SOAP", metrics.soap || {}),
       ].join("");
     }
 
@@ -578,12 +694,15 @@ const mockUIHTML = `<!doctype html>
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         setLiveStatus("paused");
+        closeMetricsSocket();
+        stopMetricsFallback();
       } else {
+        connectMetricsSocket();
         refreshMetrics();
       }
     });
     load();
-    window.setInterval(refreshMetrics, metricsIntervalMs);
+    connectMetricsSocket();
   </script>
 </body>
 </html>`

@@ -17,6 +17,11 @@ Useful files:
 - `grpc.grpc`: IDE gRPC client examples.
 - `grpcurl.sh`: CLI gRPC smoke test with scenario switching.
 - `websocket.http`: WebSocket dry-run and CLI smoke commands.
+- `s3.http`: S3-compatible object API smoke requests.
+- `aws.http`: SQS/SNS-compatible queue and topic smoke requests.
+- `pubsub.http`: Google Pub/Sub-compatible topic and subscription smoke requests.
+- `azure-servicebus.http`: Azure Service Bus-compatible queue smoke requests.
+- `soap.http`: SOAP XML-over-HTTP smoke requests.
 - `brokers.http`: Kafka/NATS/RabbitMQ/MQTT dry-run, real broker routes, and broker
   HTTP-facing checks.
 - `all-examples.http`: one file with a small request from each scenario type.
@@ -77,6 +82,16 @@ Real WebSocket check:
 
 ```bash
 printf '{"sender":"client","text":"ping"}\n' | websocat ws://localhost:7777/ws/chat
+```
+
+S3-compatible check:
+
+```bash
+curl -X PUT http://localhost:7777/s3/demo-bucket/readme.txt \
+  -H "Content-Type: text/plain" \
+  --data "hello from gigamock"
+curl http://localhost:7777/s3/demo-bucket/readme.txt
+curl http://localhost:7777/internal/v1/s3/metrics
 ```
 
 For real gRPC checks:

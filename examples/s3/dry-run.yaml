@@ -1,0 +1,7 @@
+path: "/s3-dry-run/:bucket/:key"
+method: GET
+type: s3
+description: "S3 dry-run route for local route and UI testing"
+scenarios:
+  - name: "dry-run s3 object"
+    dryRun: true

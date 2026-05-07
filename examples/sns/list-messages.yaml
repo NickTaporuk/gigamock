@@ -1,0 +1,6 @@
+path: "/aws/sns/:topic"
+method: GET
+type: sns
+description: "SNS-compatible topic message inspection backed by in-memory storage"
+scenarios:
+  - name: "list published messages"

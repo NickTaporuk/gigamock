@@ -1,0 +1,8 @@
+path: "/gcp/pubsub/:subscription/purge"
+method: DELETE
+type: pubsub
+description: "Google Pub/Sub-compatible purge helper for local tests"
+scenarios:
+  - name: "purge subscription backlog"
+    topic: "order-events"
+    subscription: "orders-sub"

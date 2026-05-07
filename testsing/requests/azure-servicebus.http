@@ -1,0 +1,29 @@
+###
+# Run Azure Service Bus-compatible examples:
+# go run ./cmd --dir-path ./examples/azure-servicebus
+
+###
+# Send message
+POST {{host}}azure/servicebus/orders/send
+Content-Type: application/json
+
+{"orderId":"order-1"}
+
+###
+# Receive message
+POST {{host}}azure/servicebus/orders/receive
+Accept: application/json
+
+###
+# Purge queue
+DELETE {{host}}azure/servicebus/orders/purge
+Accept: application/json
+
+###
+# Dry-run send
+POST {{host}}azure/servicebus-dry-run/orders/send
+Accept: application/json
+
+###
+GET {{host}}internal/v1/servicebus/metrics
+Accept: application/json

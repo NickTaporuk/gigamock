@@ -34,6 +34,18 @@ func Factory(
 		return NewMQTTProvider(w, lgr, ctx), nil
 	case common.WebSocketScenarioType:
 		return NewWebSocketProvider(w, req, lgr, ctx), nil
+	case common.S3ScenarioType:
+		return NewS3Provider(w, req, lgr), nil
+	case common.SQSScenarioType:
+		return NewSQSProvider(w, req, lgr), nil
+	case common.SNSScenarioType:
+		return NewSNSProvider(w, req, lgr), nil
+	case common.PubSubScenarioType:
+		return NewPubSubProvider(w, req, lgr), nil
+	case common.ServiceBusScenarioType:
+		return NewServiceBusProvider(w, req, lgr), nil
+	case common.SOAPScenarioType:
+		return NewSOAPProvider(w, req), nil
 	}
 
 	return nil, errors.New("scenario type provider is not reachable")

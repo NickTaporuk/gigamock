@@ -1,0 +1,7 @@
+path: "/aws/sqs-dry-run/:queue"
+method: POST
+type: sqs
+description: "SQS dry-run route for local route and UI testing"
+scenarios:
+  - name: "dry-run sqs queue"
+    dryRun: true

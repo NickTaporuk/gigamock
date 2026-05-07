@@ -13,6 +13,12 @@ docker build -f deployment/docker/types/nats/Dockerfile -t gigamock-nats .
 docker build -f deployment/docker/types/rabbitmq/Dockerfile -t gigamock-rabbitmq .
 docker build -f deployment/docker/types/mqtt/Dockerfile -t gigamock-mqtt .
 docker build -f deployment/docker/types/websocket/Dockerfile -t gigamock-websocket .
+docker build -f deployment/docker/types/s3/Dockerfile -t gigamock-s3 .
+docker build -f deployment/docker/types/sqs/Dockerfile -t gigamock-sqs .
+docker build -f deployment/docker/types/sns/Dockerfile -t gigamock-sns .
+docker build -f deployment/docker/types/pubsub/Dockerfile -t gigamock-pubsub .
+docker build -f deployment/docker/types/azure-servicebus/Dockerfile -t gigamock-servicebus .
+docker build -f deployment/docker/types/soap/Dockerfile -t gigamock-soap .
 ```
 
 Run example:

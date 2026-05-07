@@ -1,0 +1,42 @@
+path: "/soap/customers"
+method: POST
+type: soap
+description: "SOAP customer service mock with SOAPAction and body matching"
+scenarios:
+  - name: "get customer"
+    request:
+      soapAction: "GetCustomer"
+      bodyContains: "<customerId>customer-1</customerId>"
+    response:
+      statusCode: 200
+      headers:
+        Content-Type: "text/xml; charset=utf-8"
+      body: |
+        <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <GetCustomerResponse xmlns="urn:gigamock:customers">
+              <customer>
+                <id>customer-1</id>
+                <name>Ada Lovelace</name>
+                <status>ACTIVE</status>
+              </customer>
+            </GetCustomerResponse>
+          </soap:Body>
+        </soap:Envelope>
+  - name: "customer not found"
+    request:
+      soapAction: "GetCustomer"
+      bodyContains: "<customerId>missing</customerId>"
+    response:
+      statusCode: 500
+      headers:
+        Content-Type: "text/xml; charset=utf-8"
+      body: |
+        <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <soap:Fault>
+              <faultcode>Client.NotFound</faultcode>
+              <faultstring>customer is not found</faultstring>
+            </soap:Fault>
+          </soap:Body>
+        </soap:Envelope>

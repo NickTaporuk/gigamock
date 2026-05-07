@@ -1,0 +1,7 @@
+path: "/azure/servicebus-dry-run/:queue/send"
+method: POST
+type: servicebus
+description: "Azure Service Bus dry-run route for local route and UI testing"
+scenarios:
+  - name: "dry-run service bus send"
+    dryRun: true

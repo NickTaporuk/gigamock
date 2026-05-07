@@ -1,0 +1,8 @@
+path: "/azure/servicebus/:queue/send"
+method: POST
+type: servicebus
+description: "Azure Service Bus-compatible SendMessage mock backed by in-memory queue storage"
+scenarios:
+  - name: "send message"
+    properties:
+      source: "gigamock"

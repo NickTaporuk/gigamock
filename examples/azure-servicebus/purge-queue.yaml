@@ -1,0 +1,7 @@
+path: "/azure/servicebus/:queue/purge"
+method: DELETE
+type: servicebus
+description: "Azure Service Bus-compatible purge helper for local tests"
+scenarios:
+  - name: "purge queue"
+    queue: "orders"

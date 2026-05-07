@@ -1,0 +1,29 @@
+###
+# Run Google Pub/Sub-compatible examples:
+# go run ./cmd --dir-path ./examples/pubsub
+
+###
+# Publish message
+POST {{host}}gcp/pubsub/order-events/publish
+Content-Type: application/json
+
+{"orderId":"order-1"}
+
+###
+# Pull message
+POST {{host}}gcp/pubsub/orders-sub/pull
+Accept: application/json
+
+###
+# Purge subscription backlog
+DELETE {{host}}gcp/pubsub/orders-sub/purge
+Accept: application/json
+
+###
+# Dry-run publish
+POST {{host}}gcp/pubsub-dry-run/order-events/publish
+Accept: application/json
+
+###
+GET {{host}}internal/v1/pubsub/metrics
+Accept: application/json

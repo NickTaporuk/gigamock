@@ -1,0 +1,8 @@
+path: "/aws/sqs/:queue"
+method: POST
+type: sqs
+description: "SQS-compatible SendMessage mock backed by in-memory queue storage"
+scenarios:
+  - name: "send message"
+    attributes:
+      source: "gigamock"

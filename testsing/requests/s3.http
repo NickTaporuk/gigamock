@@ -1,0 +1,35 @@
+###
+# Run S3 examples:
+# go run ./cmd --dir-path ./examples/s3
+
+###
+# S3 dry-run route
+GET {{host}}s3-dry-run/demo-bucket/readme.txt
+Accept: application/json
+
+###
+# Put object
+PUT {{host}}s3/demo-bucket/readme.txt
+Content-Type: text/plain
+x-amz-meta-source: rest-client
+
+hello from gigamock
+
+###
+# Get object
+GET {{host}}s3/demo-bucket/readme.txt
+Accept: text/plain
+
+###
+# List bucket
+GET {{host}}s3/demo-bucket
+Accept: application/xml
+
+###
+# Delete object
+DELETE {{host}}s3/demo-bucket/readme.txt
+
+###
+# S3 runtime metrics
+GET {{host}}internal/v1/s3/metrics
+Accept: application/json

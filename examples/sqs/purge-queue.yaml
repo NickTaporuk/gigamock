@@ -1,0 +1,6 @@
+path: "/aws/sqs/:queue"
+method: DELETE
+type: sqs
+description: "SQS-compatible PurgeQueue mock backed by in-memory queue storage"
+scenarios:
+  - name: "purge queue"

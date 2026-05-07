@@ -1,0 +1,8 @@
+path: "/gcp/pubsub/:subscription/pull"
+method: POST
+type: pubsub
+description: "Google Pub/Sub-compatible Pull mock backed by in-memory topic storage"
+scenarios:
+  - name: "pull message"
+    topic: "order-events"
+    subscription: "orders-sub"

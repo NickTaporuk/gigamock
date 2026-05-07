@@ -17,4 +17,16 @@ const (
 	MQTTScenarioType = "mqtt"
 	// WebSocketScenarioType represents type "websocket" for a scenario
 	WebSocketScenarioType = "websocket"
+	// S3ScenarioType represents type "s3" for a scenario
+	S3ScenarioType = "s3"
+	// SQSScenarioType represents type "sqs" for a scenario
+	SQSScenarioType = "sqs"
+	// SNSScenarioType represents type "sns" for a scenario
+	SNSScenarioType = "sns"
+	// PubSubScenarioType represents type "pubsub" for a scenario
+	PubSubScenarioType = "pubsub"
+	// ServiceBusScenarioType represents type "servicebus" for a scenario
+	ServiceBusScenarioType = "servicebus"
+	// SOAPScenarioType represents type "soap" for a scenario
+	SOAPScenarioType = "soap"
 )

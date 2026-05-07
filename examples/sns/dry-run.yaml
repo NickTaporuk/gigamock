@@ -1,0 +1,7 @@
+path: "/aws/sns-dry-run/:topic"
+method: POST
+type: sns
+description: "SNS dry-run route for local route and UI testing"
+scenarios:
+  - name: "dry-run sns topic"
+    dryRun: true

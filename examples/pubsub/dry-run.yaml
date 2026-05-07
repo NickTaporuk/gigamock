@@ -1,0 +1,7 @@
+path: "/gcp/pubsub-dry-run/:topic/publish"
+method: POST
+type: pubsub
+description: "Google Pub/Sub dry-run route for local route and UI testing"
+scenarios:
+  - name: "dry-run pubsub publish"
+    dryRun: true

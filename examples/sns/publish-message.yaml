@@ -1,0 +1,9 @@
+path: "/aws/sns/:topic"
+method: POST
+type: sns
+description: "SNS-compatible Publish mock backed by in-memory topic storage"
+scenarios:
+  - name: "publish message"
+    subject: "order event"
+    attributes:
+      source: "gigamock"

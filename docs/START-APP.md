@@ -24,7 +24,13 @@ go run ./cmd \
   --dir-path ./examples/nats \
   --dir-path ./examples/rabbitmq \
   --dir-path ./examples/mqtt \
-  --dir-path ./examples/websocket
+  --dir-path ./examples/websocket \
+  --dir-path ./examples/s3 \
+  --dir-path ./examples/sqs \
+  --dir-path ./examples/sns \
+  --dir-path ./examples/pubsub \
+  --dir-path ./examples/azure-servicebus \
+  --dir-path ./examples/soap
 ```
 
 Useful URLs:
@@ -35,7 +41,8 @@ http://localhost:7777/internal/v1/scenarios
 ```
 
 The mock UI includes endpoint scenario switching and live runtime metrics for
-gRPC, GraphQL, Kafka, NATS, RabbitMQ, MQTT, and WebSocket.
+gRPC, GraphQL, Kafka, NATS, RabbitMQ, MQTT, WebSocket, S3, SQS, SNS,
+Google Pub/Sub, Azure Service Bus, and SOAP.
 
 Real gRPC endpoint:
 
@@ -63,6 +70,12 @@ curl http://localhost:7777/internal/v1/nats/metrics
 curl http://localhost:7777/internal/v1/rabbitmq/metrics
 curl http://localhost:7777/internal/v1/mqtt/metrics
 curl http://localhost:7777/internal/v1/websocket/metrics
+curl http://localhost:7777/internal/v1/s3/metrics
+curl http://localhost:7777/internal/v1/sqs/metrics
+curl http://localhost:7777/internal/v1/sns/metrics
+curl http://localhost:7777/internal/v1/pubsub/metrics
+curl http://localhost:7777/internal/v1/servicebus/metrics
+curl http://localhost:7777/internal/v1/soap/metrics
 ```
 
 Kafka Docker end-to-end stack:

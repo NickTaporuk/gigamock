@@ -5,8 +5,11 @@
 
 Gigamock is a production-ready mock server foundation for describing predictable
 responses from configuration files. It can be used today for HTTP REST mocks,
-GraphQL-over-HTTP mocks, dynamic gRPC mocks, scripted WebSocket mocks, Kafka
-producer/consumer scenarios, and as a control plane for broker-based mocks.
+GraphQL-over-HTTP mocks, dynamic gRPC mocks, scripted WebSocket mocks,
+S3-compatible object mocks, Google Pub/Sub-compatible topic/subscription mocks,
+Azure Service Bus-compatible queue mocks, SOAP XML-over-HTTP mocks, Kafka
+producer/consumer scenarios, and as a control plane for broker-based and
+cloud-compatible mocks.
 
 Mock behavior is described in YAML or JSON files. At runtime Gigamock indexes
 the configured files, serves mock responses, and exposes an internal control UI
@@ -36,6 +39,12 @@ Current runtime status by scenario type:
 - `mqtt`: runtime publish scenario support with local dry-run mode
 - `websocket`: runtime scripted bidirectional WebSocket support with local
   dry-run mode
+- `s3`: runtime S3-compatible in-memory object API
+- `sqs`: runtime SQS-compatible in-memory queue API
+- `sns`: runtime SNS-compatible in-memory topic API
+- `pubsub`: runtime Google Pub/Sub-compatible in-memory topic/subscription API
+- `servicebus`: runtime Azure Service Bus-compatible in-memory queue API
+- `soap`: runtime SOAP XML-over-HTTP response mocking
 
 ## Run
 
@@ -75,7 +84,13 @@ go run ./cmd \
   --dir-path ./examples/nats \
   --dir-path ./examples/rabbitmq \
   --dir-path ./examples/mqtt \
-  --dir-path ./examples/websocket
+  --dir-path ./examples/websocket \
+  --dir-path ./examples/s3 \
+  --dir-path ./examples/sqs \
+  --dir-path ./examples/sns \
+  --dir-path ./examples/pubsub \
+  --dir-path ./examples/azure-servicebus \
+  --dir-path ./examples/soap
 ```
 
 Print console help:
@@ -107,6 +122,12 @@ Detailed field references are split by scenario type:
 | RabbitMQ | [RabbitMQ scenarios](docs/scenario-types/rabbitmq.md) | [`examples/rabbitmq`](examples/rabbitmq) |
 | MQTT | [MQTT scenarios](docs/scenario-types/mqtt.md) | [`examples/mqtt`](examples/mqtt) |
 | WebSocket | [WebSocket scenarios](docs/scenario-types/websocket.md) | [`examples/websocket`](examples/websocket) |
+| S3 | [S3 scenarios](docs/scenario-types/s3.md) | [`examples/s3`](examples/s3) |
+| SQS | [SQS scenarios](docs/scenario-types/sqs.md) | [`examples/sqs`](examples/sqs) |
+| SNS | [SNS scenarios](docs/scenario-types/sns.md) | [`examples/sns`](examples/sns) |
+| Google Pub/Sub | [Pub/Sub scenarios](docs/scenario-types/pubsub.md) | [`examples/pubsub`](examples/pubsub) |
+| Azure Service Bus | [Service Bus scenarios](docs/scenario-types/servicebus.md) | [`examples/azure-servicebus`](examples/azure-servicebus) |
+| SOAP | [SOAP scenarios](docs/scenario-types/soap.md) | [`examples/soap`](examples/soap) |
 
 The full documentation index is available in [`docs/README.md`](docs/README.md).
 
@@ -145,6 +166,14 @@ Ready-to-read YAML examples are available in the `examples` directory:
 - `examples/websocket/dry-run-chat.yaml`: WebSocket dry-run scenario.
 - `examples/websocket/chat.yaml`: real scripted bidirectional WebSocket
   scenario.
+- `examples/s3/*.yaml`: S3-compatible in-memory object API scenarios.
+- `examples/sqs/*.yaml`: SQS-compatible in-memory queue API scenarios.
+- `examples/sns/*.yaml`: SNS-compatible in-memory topic API scenarios.
+- `examples/pubsub/*.yaml`: Google Pub/Sub-compatible in-memory
+  topic/subscription API scenarios.
+- `examples/azure-servicebus/*.yaml`: Azure Service Bus-compatible in-memory
+  queue API scenarios.
+- `examples/soap/*.yaml`: SOAP XML-over-HTTP scenarios.
 
 ## Acceptance Specs And Docker
 
@@ -185,7 +214,8 @@ The UI shows:
 - description
 - source YAML/JSON file
 - active scenario selector
-- runtime metrics for gRPC, GraphQL, Kafka, NATS, RabbitMQ, MQTT, and WebSocket
+- runtime metrics for gRPC, GraphQL, Kafka, NATS, RabbitMQ, MQTT, WebSocket, S3,
+  SQS, SNS, Google Pub/Sub, Azure Service Bus, and SOAP
 - live metrics updates without refreshing the page
 
 Changing the selected scenario updates the in-memory route store. The mock
@@ -204,6 +234,12 @@ examples:
 - [RabbitMQ scenarios](docs/scenario-types/rabbitmq.md)
 - [MQTT scenarios](docs/scenario-types/mqtt.md)
 - [WebSocket scenarios](docs/scenario-types/websocket.md)
+- [S3 scenarios](docs/scenario-types/s3.md)
+- [SQS scenarios](docs/scenario-types/sqs.md)
+- [SNS scenarios](docs/scenario-types/sns.md)
+- [Google Pub/Sub scenarios](docs/scenario-types/pubsub.md)
+- [Azure Service Bus scenarios](docs/scenario-types/servicebus.md)
+- [SOAP scenarios](docs/scenario-types/soap.md)
 
 ## Internal API
 
@@ -293,6 +329,67 @@ Real WebSocket smoke test:
 printf '{"sender":"client","text":"ping"}\n' | websocat ws://localhost:7777/ws/chat
 ```
 
+S3-compatible smoke test:
+
+```bash
+curl -X PUT http://localhost:7777/s3/demo-bucket/readme.txt \
+  -H "Content-Type: text/plain" \
+  --data "hello from gigamock"
+curl http://localhost:7777/s3/demo-bucket/readme.txt
+curl http://localhost:7777/s3/demo-bucket
+curl http://localhost:7777/internal/v1/s3/metrics
+```
+
+SQS-compatible smoke test:
+
+```bash
+curl -X POST http://localhost:7777/aws/sqs/orders \
+  -H "Content-Type: application/json" \
+  --data '{"orderId":"order-1"}'
+curl http://localhost:7777/aws/sqs/orders
+curl http://localhost:7777/internal/v1/sqs/metrics
+```
+
+SNS-compatible smoke test:
+
+```bash
+curl -X POST http://localhost:7777/aws/sns/order-events \
+  -H "Content-Type: application/json" \
+  --data '{"orderId":"order-1"}'
+curl http://localhost:7777/aws/sns/order-events
+curl http://localhost:7777/internal/v1/sns/metrics
+```
+
+Google Pub/Sub-compatible smoke test:
+
+```bash
+curl -X POST http://localhost:7777/gcp/pubsub/order-events/publish \
+  -H "Content-Type: application/json" \
+  --data '{"orderId":"order-1"}'
+curl -X POST http://localhost:7777/gcp/pubsub/orders-sub/pull
+curl http://localhost:7777/internal/v1/pubsub/metrics
+```
+
+Azure Service Bus-compatible smoke test:
+
+```bash
+curl -X POST http://localhost:7777/azure/servicebus/orders/send \
+  -H "Content-Type: application/json" \
+  --data '{"orderId":"order-1"}'
+curl -X POST http://localhost:7777/azure/servicebus/orders/receive
+curl http://localhost:7777/internal/v1/servicebus/metrics
+```
+
+SOAP smoke test:
+
+```bash
+curl -X POST http://localhost:7777/soap/customers \
+  -H 'Content-Type: text/xml; charset=utf-8' \
+  -H 'SOAPAction: "GetCustomer"' \
+  --data '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><GetCustomerRequest xmlns="urn:gigamock:customers"><customerId>customer-1</customerId></GetCustomerRequest></soap:Body></soap:Envelope>'
+curl http://localhost:7777/internal/v1/soap/metrics
+```
+
 Set active scenario for an endpoint:
 
 ```bash
@@ -338,4 +435,12 @@ brew upgrade gigamock
 
 ## License
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FNickTaporuk%2Fgigamock.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FNickTaporuk%2Fgigamock?ref=badge_large)
+Gigamock uses a custom source-available license:
+[Gigamock Community and Commercial Revenue Share License v1.0](LICENSE).
+
+Personal, educational, evaluation, and non-commercial use is free. Commercial
+use that earns money from Gigamock or a product/service based on Gigamock
+requires a 5% revenue share paid to the copyright holder.
+
+This is not legal advice; review the license with a qualified lawyer before
+using it for production enforcement or enterprise sales.

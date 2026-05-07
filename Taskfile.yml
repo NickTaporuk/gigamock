@@ -46,6 +46,12 @@ tasks:
         --dir-path ./examples/rabbitmq
         --dir-path ./examples/mqtt
         --dir-path ./examples/websocket
+        --dir-path ./examples/s3
+        --dir-path ./examples/sqs
+        --dir-path ./examples/sns
+        --dir-path ./examples/pubsub
+        --dir-path ./examples/azure-servicebus
+        --dir-path ./examples/soap
 
   run:examples:
     desc: Run Gigamock with the full examples directory
@@ -92,6 +98,36 @@ tasks:
     cmds:
       - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/websocket
 
+  run:s3:
+    desc: Run S3-compatible examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/s3
+
+  run:sqs:
+    desc: Run SQS-compatible examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/sqs
+
+  run:sns:
+    desc: Run SNS-compatible examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/sns
+
+  run:pubsub:
+    desc: Run Google Pub/Sub-compatible examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/pubsub
+
+  run:servicebus:
+    desc: Run Azure Service Bus-compatible examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/azure-servicebus
+
+  run:soap:
+    desc: Run SOAP examples
+    cmds:
+      - go run ./cmd --server-port :{{.PORT}} --dir-path ./examples/soap
+
   docker:build:all:
     desc: Build Docker images for all scenario types
     cmds:
@@ -103,6 +139,12 @@ tasks:
       - task: docker:build:rabbitmq
       - task: docker:build:mqtt
       - task: docker:build:websocket
+      - task: docker:build:s3
+      - task: docker:build:sqs
+      - task: docker:build:sns
+      - task: docker:build:pubsub
+      - task: docker:build:servicebus
+      - task: docker:build:soap
 
   docker:build:http:
     desc: Build HTTP Docker image
@@ -143,6 +185,36 @@ tasks:
     desc: Build WebSocket Docker image
     cmds:
       - docker build -f deployment/docker/types/websocket/Dockerfile -t gigamock-websocket .
+
+  docker:build:s3:
+    desc: Build S3 Docker image
+    cmds:
+      - docker build -f deployment/docker/types/s3/Dockerfile -t gigamock-s3 .
+
+  docker:build:sqs:
+    desc: Build SQS Docker image
+    cmds:
+      - docker build -f deployment/docker/types/sqs/Dockerfile -t gigamock-sqs .
+
+  docker:build:sns:
+    desc: Build SNS Docker image
+    cmds:
+      - docker build -f deployment/docker/types/sns/Dockerfile -t gigamock-sns .
+
+  docker:build:pubsub:
+    desc: Build Google Pub/Sub Docker image
+    cmds:
+      - docker build -f deployment/docker/types/pubsub/Dockerfile -t gigamock-pubsub .
+
+  docker:build:servicebus:
+    desc: Build Azure Service Bus Docker image
+    cmds:
+      - docker build -f deployment/docker/types/azure-servicebus/Dockerfile -t gigamock-servicebus .
+
+  docker:build:soap:
+    desc: Build SOAP Docker image
+    cmds:
+      - docker build -f deployment/docker/types/soap/Dockerfile -t gigamock-soap .
 
   docker:run:http:
     desc: Run HTTP Docker image
@@ -199,6 +271,36 @@ tasks:
     desc: Run WebSocket Docker image
     cmds:
       - docker run --rm -p {{.PORT}}:7777 gigamock-websocket
+
+  docker:run:s3:
+    desc: Run S3 Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-s3
+
+  docker:run:sqs:
+    desc: Run SQS Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-sqs
+
+  docker:run:sns:
+    desc: Run SNS Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-sns
+
+  docker:run:pubsub:
+    desc: Run Google Pub/Sub Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-pubsub
+
+  docker:run:servicebus:
+    desc: Run Azure Service Bus Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-servicebus
+
+  docker:run:soap:
+    desc: Run SOAP Docker image
+    cmds:
+      - docker run --rm -p {{.PORT}}:7777 gigamock-soap
 
   features:list:
     desc: List Gherkin feature files

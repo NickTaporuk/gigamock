@@ -1,0 +1,14 @@
+path: "/s3/:bucket/:key"
+method: GET
+type: s3
+description: "S3-compatible GET object mock with optional default object body"
+scenarios:
+  - name: "get object"
+    contentType: "application/json"
+    headers:
+      Cache-Control: "no-store"
+    body: |
+      {
+        "message": "default object body",
+        "source": "gigamock"
+      }

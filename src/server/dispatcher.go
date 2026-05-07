@@ -11,6 +11,7 @@ import (
 	"time"
 
 	urlrouter "github.com/azer/url-router"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 
 	"github.com/NickTaporuk/gigamock/src/fileProvider"
@@ -54,6 +55,11 @@ func NewDispatcher(
 func (di *Dispatcher) inMemoryHandlers(w http.ResponseWriter, req *http.Request) (bool, error) {
 	if req.URL.Path == "/internal/v1/mock-ui" && req.Method == http.MethodGet {
 		serveMockUI(w, req)
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/mock-ui/ws" && req.Method == http.MethodGet {
+		di.serveMockUIWebSocket(w, req)
 		return true, nil
 	}
 
@@ -112,6 +118,48 @@ func (di *Dispatcher) inMemoryHandlers(w http.ResponseWriter, req *http.Request)
 		return true, nil
 	}
 
+	if req.URL.Path == "/internal/v1/s3/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.S3MetricsSnapshot())
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/sqs/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.SQSMetricsSnapshot())
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/sns/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.SNSMetricsSnapshot())
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/pubsub/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.PubSubMetricsSnapshot())
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/servicebus/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.ServiceBusMetricsSnapshot())
+		return true, nil
+	}
+
+	if req.URL.Path == "/internal/v1/soap/metrics" && req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(scenarioType.SOAPMetricsSnapshot())
+		return true, nil
+	}
+
 	if req.URL.Path == "/internal/v1/in-memory" {
 		h := inMemory.NewHandler(&di.indexedFiles, di.logger)
 		switch req.Method {
@@ -127,6 +175,58 @@ func (di *Dispatcher) inMemoryHandlers(w http.ResponseWriter, req *http.Request)
 	return false, nil
 }
 
+func (di *Dispatcher) serveMockUIWebSocket(w http.ResponseWriter, req *http.Request) {
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+	conn, err := upgrader.Upgrade(w, req, nil)
+	if err != nil {
+		di.logger.WithError(err).Error("mock UI websocket upgrade failed")
+		return
+	}
+	defer conn.Close()
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	if err := conn.WriteJSON(di.mockUIMetricsSnapshot()); err != nil {
+		return
+	}
+
+	for {
+		select {
+		case <-req.Context().Done():
+			return
+		case <-di.ctx.Done():
+			return
+		case <-ticker.C:
+			if err := conn.WriteJSON(di.mockUIMetricsSnapshot()); err != nil {
+				return
+			}
+		}
+	}
+}
+
+func (di *Dispatcher) mockUIMetricsSnapshot() map[string]interface{} {
+	return map[string]interface{}{
+		"grpc":       di.grpcMetrics.snapshot(),
+		"graphql":    scenarioType.GraphQLMetricsSnapshot(),
+		"kafka":      scenarioType.KafkaMetricsSnapshot(),
+		"nats":       scenarioType.NATSMetricsSnapshot(),
+		"rabbitmq":   scenarioType.RabbitMQMetricsSnapshot(),
+		"mqtt":       scenarioType.MQTTMetricsSnapshot(),
+		"websocket":  scenarioType.WebSocketMetricsSnapshot(),
+		"s3":         scenarioType.S3MetricsSnapshot(),
+		"sqs":        scenarioType.SQSMetricsSnapshot(),
+		"sns":        scenarioType.SNSMetricsSnapshot(),
+		"pubsub":     scenarioType.PubSubMetricsSnapshot(),
+		"servicebus": scenarioType.ServiceBusMetricsSnapshot(),
+		"soap":       scenarioType.SOAPMetricsSnapshot(),
+	}
+}
+
 // RouteMatching
 func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) error {
 	matched, err := di.inMemoryHandlers(w, req)
@@ -139,8 +239,12 @@ func (di *Dispatcher) RouteMatching(w http.ResponseWriter, req *http.Request) er
 	}
 
 	match := di.router.Match(req.URL.Path)
+	if match == nil {
+		http.NotFound(w, req)
+		return nil
+	}
 
-	if v, ok := di.indexedFiles[fileWalkers.PrepareInMemoryStoreKey(match.Pattern, req.Method)]; ok && match != nil {
+	if v, ok := di.indexedFiles[fileWalkers.PrepareInMemoryStoreKey(match.Pattern, req.Method)]; ok {
 		di.logger.Debug(
 			fmt.Sprintf(
 				"route %s for method %s is matched to file path %s, use scenario number %d",

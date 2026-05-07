@@ -1,0 +1,8 @@
+path: "/gcp/pubsub/:topic/publish"
+method: POST
+type: pubsub
+description: "Google Pub/Sub-compatible Publish mock backed by in-memory topic storage"
+scenarios:
+  - name: "publish message"
+    attributes:
+      source: "gigamock"

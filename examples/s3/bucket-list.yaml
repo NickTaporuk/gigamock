@@ -1,0 +1,6 @@
+path: "/s3/:bucket"
+method: GET
+type: s3
+description: "S3-compatible ListObjects mock backed by in-memory storage"
+scenarios:
+  - name: "list bucket"

@@ -1,0 +1,35 @@
+###
+# Run SOAP examples:
+# go run ./cmd --dir-path ./examples/soap
+
+###
+# SOAP GetCustomer
+POST {{host}}soap/customers
+Content-Type: text/xml; charset=utf-8
+SOAPAction: "GetCustomer"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <GetCustomerRequest xmlns="urn:gigamock:customers">
+      <customerId>customer-1</customerId>
+    </GetCustomerRequest>
+  </soap:Body>
+</soap:Envelope>
+
+###
+# SOAP fault scenario
+POST {{host}}soap/customers
+Content-Type: text/xml; charset=utf-8
+SOAPAction: "GetCustomer"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <GetCustomerRequest xmlns="urn:gigamock:customers">
+      <customerId>missing</customerId>
+    </GetCustomerRequest>
+  </soap:Body>
+</soap:Envelope>
+
+###
+GET {{host}}internal/v1/soap/metrics
+Accept: application/json

@@ -1,0 +1,6 @@
+path: "/aws/sqs/:queue"
+method: GET
+type: sqs
+description: "SQS-compatible ReceiveMessage mock backed by in-memory queue storage"
+scenarios:
+  - name: "receive message"

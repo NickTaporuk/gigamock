@@ -1,0 +1,7 @@
+path: "/azure/servicebus/:queue/receive"
+method: POST
+type: servicebus
+description: "Azure Service Bus-compatible ReceiveMessage mock backed by in-memory queue storage"
+scenarios:
+  - name: "receive message"
+    queue: "orders"

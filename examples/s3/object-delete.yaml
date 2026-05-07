@@ -1,0 +1,6 @@
+path: "/s3/:bucket/:key"
+method: DELETE
+type: s3
+description: "S3-compatible DELETE object mock backed by in-memory storage"
+scenarios:
+  - name: "delete object"

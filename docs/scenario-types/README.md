@@ -8,7 +8,7 @@ Common top-level fields:
 | --- | --- | --- |
 | `path` | yes | HTTP route or logical endpoint used by Gigamock to index the scenario. |
 | `method` | yes | HTTP method used for route matching and UI switching. |
-| `type` | yes | Scenario type: `http`, `graphql`, `grpc`, `kafka`, `nats`, `rabbitmq`, `mqtt`, or `websocket`. |
+| `type` | yes | Scenario type: `http`, `graphql`, `grpc`, `kafka`, `nats`, `rabbitmq`, `mqtt`, `websocket`, `s3`, `sqs`, `sns`, `pubsub`, `servicebus`, or `soap`. |
 | `description` | no | Human-readable endpoint description shown in the control UI. |
 | `scenarios` | yes | Ordered list of selectable scenarios. Scenario index starts at `0`. |
 | `webhook` | no | Optional webhook executed after scenario retrieval where supported. |
@@ -25,6 +25,12 @@ Scenario type docs:
 | RabbitMQ | [RabbitMQ](rabbitmq.md) | `url`, `exchange`, `routingKey`, `message` |
 | MQTT | [MQTT](mqtt.md) | `broker`, `clientID`, `topic`, `qos`, `message` |
 | WebSocket | [WebSocket](websocket.md) | `sendOnConnect`, `steps`, `receive`, `send`, `close` |
+| S3 | [S3](s3.md) | `bucket`, `key`, `contentType`, `body`, `metadata` |
+| SQS | [SQS](sqs.md) | `queue`, `message`, `attributes` |
+| SNS | [SNS](sns.md) | `topic`, `message`, `subject`, `attributes` |
+| Google Pub/Sub | [Pub/Sub](pubsub.md) | `topic`, `subscription`, `message`, `attributes` |
+| Azure Service Bus | [Service Bus](servicebus.md) | `queue`, `topic`, `subscription`, `message`, `properties` |
+| SOAP | [SOAP](soap.md) | `request.soapAction`, `request.bodyContains`, `response.body` |
 
 Runtime status:
 
@@ -38,5 +44,11 @@ Runtime status:
 | `rabbitmq` | Runtime publish support implemented with local dry-run mode. |
 | `mqtt` | Runtime publish support implemented with local dry-run mode. |
 | `websocket` | Runtime scripted bidirectional support implemented with local dry-run mode. |
+| `s3` | Runtime in-memory S3-compatible object API implemented. |
+| `sqs` | Runtime in-memory SQS-compatible queue API implemented. |
+| `sns` | Runtime in-memory SNS-compatible topic API implemented. |
+| `pubsub` | Runtime in-memory Google Pub/Sub-compatible topic/subscription API implemented. |
+| `servicebus` | Runtime in-memory Azure Service Bus-compatible queue API implemented. |
+| `soap` | Runtime SOAP XML-over-HTTP response mocking implemented. |
 
 See the repository documentation index in [../README.md](../README.md).

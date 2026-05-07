@@ -1,0 +1,9 @@
+path: "/s3/:bucket/:key"
+method: PUT
+type: s3
+description: "S3-compatible PUT object mock backed by in-memory storage"
+scenarios:
+  - name: "put object"
+    contentType: "application/octet-stream"
+    metadata:
+      source: "gigamock"
