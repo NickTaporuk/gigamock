@@ -130,6 +130,7 @@ func (g *GraphQLTypeProvider) Retrieve(scenarioNumber int) {
 		if rawBody == "" {
 			rawBody = `{}`
 		}
+		rawBody = filterGraphQLResponseBody(rawBody, payload.Query)
 		responses = append(responses, json.RawMessage(rawBody))
 		if len(payloads) == 1 {
 			g.writeResponse(scenario, rawBody)
@@ -247,6 +248,303 @@ func graphQLPayloadMatches(expected scenarios.GraphQLScenarioRequest, actual *gr
 
 func normalizeGraphQLQuery(query string) string {
 	return strings.Join(strings.Fields(query), " ")
+}
+
+type graphQLSelection map[string]graphQLSelection
+
+type graphQLSelectionParser struct {
+	tokens []string
+	pos    int
+}
+
+func filterGraphQLResponseBody(body string, query string) string {
+	if strings.TrimSpace(query) == "" {
+		return body
+	}
+
+	selection, ok := parseGraphQLSelection(query)
+	if !ok || len(selection) == 0 {
+		return body
+	}
+
+	var response map[string]interface{}
+	if err := json.Unmarshal([]byte(body), &response); err != nil {
+		return body
+	}
+
+	data, ok := response["data"].(map[string]interface{})
+	if !ok {
+		return body
+	}
+
+	filteredData, matched := filterGraphQLObject(data, selection)
+	if !matched {
+		return body
+	}
+
+	response["data"] = filteredData
+	filteredBody, err := json.Marshal(response)
+	if err != nil {
+		return body
+	}
+
+	return string(filteredBody)
+}
+
+func parseGraphQLSelection(query string) (graphQLSelection, bool) {
+	tokens := tokenizeGraphQLQuery(query)
+	if len(tokens) == 0 {
+		return nil, false
+	}
+
+	parser := &graphQLSelectionParser{tokens: tokens}
+	switch parser.peek() {
+	case "query", "mutation", "subscription":
+		parser.next()
+		operationName := ""
+		if parser.isName(parser.peek()) {
+			operationName = parser.next()
+		}
+		hasOperationArguments := parser.peek() == "("
+		if hasOperationArguments {
+			parser.skipBalanced("(", ")")
+		}
+		parser.skipDirectives()
+		if parser.peek() != "{" {
+			return nil, false
+		}
+		selection, ok := parser.parseSelectionSet()
+		if hasOperationArguments && operationName != "" && len(selection) > 0 && !strings.Contains(query, "$") {
+			return graphQLSelection{operationName: selection}, ok
+		}
+		return selection, ok
+	case "{":
+		return parser.parseSelectionSet()
+	default:
+		if !parser.isName(parser.peek()) {
+			return nil, false
+		}
+		key, child, ok := parser.parseField()
+		if !ok {
+			return nil, false
+		}
+		return graphQLSelection{key: child}, true
+	}
+}
+
+func tokenizeGraphQLQuery(query string) []string {
+	tokens := []string{}
+	for i := 0; i < len(query); {
+		ch := query[i]
+		if ch == '#' {
+			for i < len(query) && query[i] != '\n' && query[i] != '\r' {
+				i++
+			}
+			continue
+		}
+		if ch == '"' {
+			i++
+			for i < len(query) {
+				if query[i] == '\\' {
+					i += 2
+					continue
+				}
+				if query[i] == '"' {
+					i++
+					break
+				}
+				i++
+			}
+			continue
+		}
+		if isGraphQLNameStart(ch) {
+			start := i
+			i++
+			for i < len(query) && isGraphQLNameContinue(query[i]) {
+				i++
+			}
+			tokens = append(tokens, query[start:i])
+			continue
+		}
+		if strings.ContainsRune("{}():![]=@", rune(ch)) {
+			tokens = append(tokens, string(ch))
+		}
+		if ch == '.' && i+2 < len(query) && query[i+1] == '.' && query[i+2] == '.' {
+			tokens = append(tokens, "...")
+			i += 3
+			continue
+		}
+		i++
+	}
+	return tokens
+}
+
+func isGraphQLNameStart(ch byte) bool {
+	return ch == '_' || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')
+}
+
+func isGraphQLNameContinue(ch byte) bool {
+	return isGraphQLNameStart(ch) || (ch >= '0' && ch <= '9')
+}
+
+func (p *graphQLSelectionParser) parseSelectionSet() (graphQLSelection, bool) {
+	if p.next() != "{" {
+		return nil, false
+	}
+
+	selection := graphQLSelection{}
+	for p.pos < len(p.tokens) && p.peek() != "}" {
+		if p.peek() == "..." {
+			p.next()
+			if p.peek() == "on" {
+				p.next()
+				if p.isName(p.peek()) {
+					p.next()
+				}
+				p.skipDirectives()
+				if p.peek() == "{" {
+					inlineSelection, ok := p.parseSelectionSet()
+					if !ok {
+						return nil, false
+					}
+					mergeGraphQLSelections(selection, inlineSelection)
+				}
+			} else if p.isName(p.peek()) {
+				p.next()
+			}
+			continue
+		}
+
+		key, child, ok := p.parseField()
+		if !ok {
+			return nil, false
+		}
+		selection[key] = child
+	}
+
+	if p.next() != "}" {
+		return nil, false
+	}
+	return selection, true
+}
+
+func (p *graphQLSelectionParser) parseField() (string, graphQLSelection, bool) {
+	if !p.isName(p.peek()) {
+		return "", nil, false
+	}
+
+	responseKey := p.next()
+	if p.peek() == ":" {
+		p.next()
+		if !p.isName(p.peek()) {
+			return "", nil, false
+		}
+		p.next()
+	}
+
+	if p.peek() == "(" {
+		p.skipBalanced("(", ")")
+	}
+	p.skipDirectives()
+
+	if p.peek() == "{" {
+		child, ok := p.parseSelectionSet()
+		return responseKey, child, ok
+	}
+
+	return responseKey, graphQLSelection{}, true
+}
+
+func (p *graphQLSelectionParser) skipDirectives() {
+	for p.peek() == "@" {
+		p.next()
+		if p.isName(p.peek()) {
+			p.next()
+		}
+		if p.peek() == "(" {
+			p.skipBalanced("(", ")")
+		}
+	}
+}
+
+func (p *graphQLSelectionParser) skipBalanced(open string, close string) {
+	if p.peek() != open {
+		return
+	}
+
+	depth := 0
+	for p.pos < len(p.tokens) {
+		token := p.next()
+		if token == open {
+			depth++
+		}
+		if token == close {
+			depth--
+			if depth == 0 {
+				return
+			}
+		}
+	}
+}
+
+func (p *graphQLSelectionParser) peek() string {
+	if p.pos >= len(p.tokens) {
+		return ""
+	}
+	return p.tokens[p.pos]
+}
+
+func (p *graphQLSelectionParser) next() string {
+	token := p.peek()
+	if p.pos < len(p.tokens) {
+		p.pos++
+	}
+	return token
+}
+
+func (p *graphQLSelectionParser) isName(token string) bool {
+	return token != "" && isGraphQLNameStart(token[0])
+}
+
+func mergeGraphQLSelections(dst graphQLSelection, src graphQLSelection) {
+	for key, child := range src {
+		dst[key] = child
+	}
+}
+
+func filterGraphQLObject(source map[string]interface{}, selection graphQLSelection) (map[string]interface{}, bool) {
+	filtered := map[string]interface{}{}
+	for key, childSelection := range selection {
+		value, ok := source[key]
+		if !ok {
+			continue
+		}
+		filtered[key] = filterGraphQLValue(value, childSelection)
+	}
+	return filtered, len(filtered) > 0
+}
+
+func filterGraphQLValue(value interface{}, selection graphQLSelection) interface{} {
+	if len(selection) == 0 {
+		return value
+	}
+
+	switch typedValue := value.(type) {
+	case map[string]interface{}:
+		filtered, matched := filterGraphQLObject(typedValue, selection)
+		if !matched {
+			return typedValue
+		}
+		return filtered
+	case []interface{}:
+		filtered := make([]interface{}, 0, len(typedValue))
+		for _, item := range typedValue {
+			filtered = append(filtered, filterGraphQLValue(item, selection))
+		}
+		return filtered
+	default:
+		return value
+	}
 }
 
 func jsonPayloadEqual(expected interface{}, actual interface{}) bool {
