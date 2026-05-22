@@ -54,10 +54,37 @@ Response fields:
 
 | Field | Required | Description |
 | --- | --- | --- |
-| `statusCode` | yes | HTTP status code. |
+| `statusCode` | yes | HTTP status code. Optional when `redirect` is set; defaults to `302`. Redirect responses must use a `3xx` status. |
 | `headers` | no | Response headers. |
 | `cookies` | no | Response cookies. |
 | `body` | no | Response body as a string. |
+| `redirect` | no | Redirect target. When set, Gigamock writes the `Location` header and does not write `body`. |
+
+Redirect fields:
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `url` | yes | Redirect target URL. Existing query string values are preserved. |
+| `queryStringParameters` | no | Query string values appended to the redirect URL. Use this for payment/session data. |
+
+Redirect example:
+
+```yaml
+path: "/payments"
+method: POST
+type: http
+scenarios:
+  - name: "checkout redirect"
+    request:
+    response:
+      statusCode: 303
+      redirect:
+        url: "https://payments.example/checkout"
+        queryStringParameters:
+          sessionId: "session-1"
+          amount: "4900"
+          currency: "USD"
+```
 
 Example file:
 

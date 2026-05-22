@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">Gigamock Control UI</title>
+  <desc id="desc">Control UI showing runtime metrics, endpoint filters, and selectable mock response scenarios.</desc>
+  <rect width="1280" height="760" fill="#f6f7f9"/>
+  <rect x="32" y="28" width="1216" height="704" rx="8" fill="#ffffff" stroke="#d7dce2"/>
+
+  <text x="64" y="82" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="700" fill="#172033">Gigamock Control</text>
+  <rect x="64" y="108" width="432" height="44" rx="6" fill="#ffffff" stroke="#c7d0db"/>
+  <text x="86" y="136" font-family="Inter, Arial, sans-serif" font-size="15" fill="#6b7788">Search path, service, file, description</text>
+  <rect x="516" y="108" width="176" height="44" rx="6" fill="#ffffff" stroke="#c7d0db"/>
+  <text x="536" y="136" font-family="Inter, Arial, sans-serif" font-size="15" fill="#172033">Filter: http</text>
+  <rect x="710" y="108" width="256" height="44" rx="6" fill="#ffffff" stroke="#c7d0db"/>
+  <text x="730" y="136" font-family="Inter, Arial, sans-serif" font-size="15" fill="#172033">Service: examples/rest</text>
+  <rect x="986" y="108" width="112" height="44" rx="6" fill="#1e6bff"/>
+  <text x="1015" y="136" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Refresh</text>
+  <circle cx="1132" cy="130" r="6" fill="#16a34a"/>
+  <text x="1146" y="136" font-family="Inter, Arial, sans-serif" font-size="15" fill="#172033">Live</text>
+
+  <text x="64" y="196" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="#172033">5 of 46 endpoints</text>
+
+  <rect x="64" y="226" width="248" height="96" rx="8" fill="#f8fafc" stroke="#d7dce2"/>
+  <text x="86" y="260" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#172033">HTTP</text>
+  <text x="86" y="288" font-family="Inter, Arial, sans-serif" font-size="14" fill="#5d6b7c">12 calls, 0 errors</text>
+  <rect x="86" y="300" width="92" height="6" rx="3" fill="#16a34a"/>
+
+  <rect x="332" y="226" width="248" height="96" rx="8" fill="#f8fafc" stroke="#d7dce2"/>
+  <text x="354" y="260" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#172033">GraphQL</text>
+  <text x="354" y="288" font-family="Inter, Arial, sans-serif" font-size="14" fill="#5d6b7c">Field-selected mocks</text>
+  <rect x="354" y="300" width="128" height="6" rx="3" fill="#1e6bff"/>
+
+  <rect x="600" y="226" width="248" height="96" rx="8" fill="#f8fafc" stroke="#d7dce2"/>
+  <text x="622" y="260" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#172033">gRPC</text>
+  <text x="622" y="288" font-family="Inter, Arial, sans-serif" font-size="14" fill="#5d6b7c">No runtime calls yet</text>
+  <rect x="622" y="300" width="78" height="6" rx="3" fill="#94a3b8"/>
+
+  <rect x="868" y="226" width="248" height="96" rx="8" fill="#f8fafc" stroke="#d7dce2"/>
+  <text x="890" y="260" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#172033">Brokers</text>
+  <text x="890" y="288" font-family="Inter, Arial, sans-serif" font-size="14" fill="#5d6b7c">Kafka, NATS, RabbitMQ</text>
+  <rect x="890" y="300" width="146" height="6" rx="3" fill="#f59e0b"/>
+
+  <g>
+    <rect x="64" y="360" width="360" height="270" rx="8" fill="#ffffff" stroke="#d7dce2"/>
+    <rect x="84" y="382" width="52" height="24" rx="4" fill="#e8f0ff"/>
+    <text x="98" y="399" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#1e6bff">http</text>
+    <rect x="148" y="382" width="46" height="24" rx="4" fill="#ecfdf3"/>
+    <text x="158" y="399" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#15803d">GET</text>
+    <text x="84" y="444" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#172033">/control-ui/users</text>
+    <text x="84" y="476" font-family="Inter, Arial, sans-serif" font-size="14" fill="#5d6b7c">HTTP example with multiple responses</text>
+    <text x="84" y="514" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7788">File: control-ui-users.yaml</text>
+    <text x="84" y="552" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#172033">Active scenario</text>
+    <rect x="84" y="568" width="230" height="38" rx="6" fill="#ffffff" stroke="#c7d0db"/>
+    <text x="100" y="592" font-family="Inter, Arial, sans-serif" font-size="14" fill="#172033">1 - empty users</text>
+    <rect x="326" y="568" width="72" height="38" rx="6" fill="#172033"/>
+    <text x="346" y="592" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Apply</text>
+  </g>
+
+  <g>
+    <rect x="460" y="360" width="360" height="270" rx="8" fill="#ffffff" stroke="#d7dce2"/>
+    <rect x="480" y="382" width="52" height="24" rx="4" fill="#e8f0ff"/>
+    <text x="494" y="399" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#1e6bff">http</text>
+    <rect x="544" y="382" width="54" height="24" rx="4" fill="#fff7ed"/>
+    <text x="556" y="399" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#c2410c">POST</text>
+    <text x="480" y="444" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#172033">/payments</text>
+    <text x="480" y="476" font-family="Inter, Arial, sans-serif" font-size="14" fill="#5d6b7c">Payment flow redirects to checkout</text>
+    <text x="480" y="514" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7788">Response: 303 Location + query data</text>
+    <text x="480" y="552" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#172033">Active scenario</text>
+    <rect x="480" y="568" width="230" height="38" rx="6" fill="#ffffff" stroke="#c7d0db"/>
+    <text x="496" y="592" font-family="Inter, Arial, sans-serif" font-size="14" fill="#172033">0 - checkout redirect</text>
+    <rect x="722" y="568" width="72" height="38" rx="6" fill="#172033"/>
+    <text x="742" y="592" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Apply</text>
+  </g>
+
+  <g>
+    <rect x="856" y="360" width="360" height="270" rx="8" fill="#ffffff" stroke="#d7dce2"/>
+    <rect x="876" y="382" width="52" height="24" rx="4" fill="#e8f0ff"/>
+    <text x="890" y="399" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#1e6bff">http</text>
+    <rect x="940" y="382" width="42" height="24" rx="4" fill="#ecfdf3"/>
+    <text x="951" y="399" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#15803d">GET</text>
+    <text x="876" y="444" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#172033">/users</text>
+    <text x="876" y="476" font-family="Inter, Arial, sans-serif" font-size="14" fill="#5d6b7c">Switch between success and error data</text>
+    <text x="876" y="514" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7788">Scenario index starts at 0</text>
+    <text x="876" y="552" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#172033">Active scenario</text>
+    <rect x="876" y="568" width="230" height="38" rx="6" fill="#ffffff" stroke="#c7d0db"/>
+    <text x="892" y="592" font-family="Inter, Arial, sans-serif" font-size="14" fill="#172033">1 - service unavailable</text>
+    <rect x="1118" y="568" width="72" height="38" rx="6" fill="#172033"/>
+    <text x="1138" y="592" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Apply</text>
+  </g>
+
+  <rect x="64" y="668" width="1152" height="36" rx="6" fill="#f8fafc" stroke="#d7dce2"/>
+  <text x="84" y="692" font-family="Inter, Arial, sans-serif" font-size="14" fill="#5d6b7c">Changing the active scenario updates the in-memory route store immediately. No server restart is required.</text>
+</svg>

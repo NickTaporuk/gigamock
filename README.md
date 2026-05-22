@@ -131,6 +131,72 @@ Detailed field references are split by scenario type:
 
 The full documentation index is available in [`docs/README.md`](docs/README.md).
 
+## HTTP Example
+
+HTTP mocks return configured status codes, headers, cookies, and bodies. A
+single endpoint can define multiple scenarios, then the Control UI or internal
+API can switch which response is active.
+
+```yaml
+path: "/users"
+method: GET
+type: http
+description: "Users API with selectable responses"
+scenarios:
+  - name: "active users"
+    request:
+    response:
+      statusCode: 200
+      headers:
+        Content-Type: "application/json"
+      body: |
+        {
+          "users": [
+            {
+              "id": "user-1",
+              "name": "Ada Lovelace"
+            }
+          ]
+        }
+
+  - name: "temporary outage"
+    request:
+    response:
+      statusCode: 503
+      headers:
+        Content-Type: "application/json"
+      body: |
+        {
+          "error": "users service is temporarily unavailable"
+        }
+```
+
+HTTP responses can also redirect to another URL. This is useful for payment or
+checkout flows where the mock should send the client to a provider page with
+session data in the redirect URL.
+
+```yaml
+path: "/payments"
+method: POST
+type: http
+description: "Payment redirect mock"
+scenarios:
+  - name: "checkout redirect"
+    request:
+    response:
+      statusCode: 303
+      redirect:
+        url: "https://payments.example/checkout"
+        queryStringParameters:
+          sessionId: "session-1"
+          amount: "4900"
+          currency: "USD"
+```
+
+When `redirect` is set, Gigamock writes the `Location` header and does not write
+the response body. If `statusCode` is omitted for a redirect, it defaults to
+`302`.
+
 ## Examples
 
 Ready-to-read YAML examples are available in the `examples` directory:
@@ -206,6 +272,8 @@ Open:
 http://localhost:7777/internal/v1/mock-ui
 ```
 
+![Gigamock Control UI](docs/assets/control-ui.svg)
+
 The UI shows:
 
 - endpoint path
@@ -220,6 +288,11 @@ The UI shows:
 
 Changing the selected scenario updates the in-memory route store. The mock
 server starts using the selected scenario immediately.
+
+Use this when you need to test different responses from the same endpoint, for
+example a successful HTTP body, an empty list, a `500` error, or a payment
+redirect. Select a different scenario in the endpoint card, click `Apply`, and
+the next matching request receives that scenario response.
 
 ## Scenario Documentation
 
