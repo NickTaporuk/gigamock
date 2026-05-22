@@ -294,6 +294,10 @@ example a successful HTTP body, an empty list, a `500` error, or a payment
 redirect. Select a different scenario in the endpoint card, click `Apply`, and
 the next matching request receives that scenario response.
 
+The same scenario switch is available through the internal HTTP API, so tests,
+scripts, CI jobs, and local automation can change mock behavior without opening
+the UI or restarting Gigamock.
+
 ## Scenario Documentation
 
 Use the scenario type documentation for field-level details and request
@@ -316,6 +320,10 @@ examples:
 
 ## Internal API
 
+The internal API is the control plane for loaded mock scenarios. It can inspect
+the current in-memory route state, list UI-friendly scenario metadata, and switch
+the active scenario for an endpoint programmatically.
+
 List raw in-memory route state:
 
 ```bash
@@ -327,6 +335,51 @@ List UI-friendly scenario details:
 ```bash
 curl http://localhost:7777/internal/v1/scenarios
 ```
+
+Switch the active scenario for an endpoint:
+
+```bash
+curl -X POST http://localhost:7777/internal/v1/in-memory \
+  -H "Content-Type: application/json" \
+  -d '{
+    "path": "/users",
+    "method": "GET",
+    "scenarioNumber": 1
+  }'
+```
+
+The `path` and `method` must match a loaded mock file. `scenarioNumber` is the
+zero-based index in that file's `scenarios` list. After the request succeeds,
+the next matching client request uses the selected scenario immediately.
+
+Example flow for resilience testing:
+
+```bash
+# Start with a healthy users response.
+curl -X POST http://localhost:7777/internal/v1/in-memory \
+  -H "Content-Type: application/json" \
+  -d '{"path":"/users","method":"GET","scenarioNumber":0}'
+curl http://localhost:7777/users
+
+# Switch the same endpoint to an error response.
+curl -X POST http://localhost:7777/internal/v1/in-memory \
+  -H "Content-Type: application/json" \
+  -d '{"path":"/users","method":"GET","scenarioNumber":1}'
+curl http://localhost:7777/users
+```
+
+This is useful when you need to:
+
+- test retry, timeout, fallback, and circuit-breaker behavior
+- verify frontend empty, loading, success, redirect, and error states
+- run CI scenarios that force specific backend responses before each test case
+- reproduce production-like incidents without changing application code
+- validate graceful degradation when HTTP, GraphQL, gRPC, broker, or cloud-like
+  dependencies return different outcomes
+- switch between happy-path, degraded, and failure responses while keeping the
+  same endpoint URL stable
+
+The Control UI uses this same API behind the `Apply` button.
 
 Kafka dry-run smoke test:
 
@@ -461,18 +514,6 @@ curl -X POST http://localhost:7777/soap/customers \
   -H 'SOAPAction: "GetCustomer"' \
   --data '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><GetCustomerRequest xmlns="urn:gigamock:customers"><customerId>customer-1</customerId></GetCustomerRequest></soap:Body></soap:Envelope>'
 curl http://localhost:7777/internal/v1/soap/metrics
-```
-
-Set active scenario for an endpoint:
-
-```bash
-curl -X POST http://localhost:7777/internal/v1/in-memory \
-  -H "Content-Type: application/json" \
-  -d '{
-    "path": "/users",
-    "method": "GET",
-    "scenarioNumber": 1
-  }'
 ```
 
 ## Download
