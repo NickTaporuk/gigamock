@@ -17,16 +17,22 @@ const mockUIHTML = `<!doctype html>
   <style>
     :root {
       color-scheme: light;
-      --bg: #f7f8fb;
+      --bg: #f6f7f9;
       --panel: #ffffff;
       --text: #172033;
-      --muted: #667085;
-      --line: #d9deea;
-      --accent: #1463ff;
+      --muted: #5d6b7c;
+      --subtle: #6b7788;
+      --line: #d7dce2;
+      --input-line: #c7d0db;
+      --accent: #1e6bff;
       --accent-soft: #e8f0ff;
       --danger: #b42318;
-      --ok: #027a48;
-      --shadow: 0 10px 28px rgba(23, 32, 51, .08);
+      --ok: #15803d;
+      --ok-soft: #ecfdf3;
+      --warn: #c2410c;
+      --warn-soft: #fff7ed;
+      --broker: #f59e0b;
+      --shadow: none;
     }
 
     * { box-sizing: border-box; }
@@ -37,39 +43,37 @@ const mockUIHTML = `<!doctype html>
       font: 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     header {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      border-bottom: 1px solid var(--line);
-      background: rgba(247, 248, 251, .94);
-      backdrop-filter: blur(10px);
+      max-width: 1216px;
+      margin: 28px auto 0;
+      padding: 0 32px;
+      border: 1px solid var(--line);
+      border-bottom: 0;
+      border-radius: 8px 8px 0 0;
+      background: var(--panel);
     }
     .bar {
-      max-width: 1180px;
       margin: 0 auto;
-      padding: 18px 20px;
+      padding: 28px 0 22px;
       display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 16px;
-      align-items: center;
+      gap: 20px;
     }
     h1 {
       margin: 0;
-      font-size: 22px;
+      font-size: 34px;
       line-height: 1.2;
-      font-weight: 720;
+      font-weight: 740;
       letter-spacing: 0;
     }
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(260px, 1fr) minmax(160px, 160px) minmax(220px, 220px) 104px 72px;
+      grid-template-columns: minmax(300px, 432px) minmax(160px, 176px) minmax(220px, 256px) 112px 84px;
       gap: 10px;
       align-items: center;
       min-width: 0;
     }
     input, select, button {
-      height: 36px;
-      border: 1px solid var(--line);
+      height: 44px;
+      border: 1px solid var(--input-line);
       border-radius: 6px;
       background: #fff;
       color: var(--text);
@@ -104,18 +108,18 @@ const mockUIHTML = `<!doctype html>
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      color: var(--muted);
-      font-size: 12px;
+      color: var(--text);
+      font-size: 15px;
       font-weight: 700;
       white-space: nowrap;
-      width: 72px;
+      width: 84px;
     }
     .live-dot {
-      width: 8px;
-      height: 8px;
+      width: 12px;
+      height: 12px;
       border-radius: 999px;
       background: var(--ok);
-      box-shadow: 0 0 0 4px rgba(2, 122, 72, .12);
+      box-shadow: none;
     }
     .live-status.paused .live-dot {
       background: var(--muted);
@@ -129,31 +133,66 @@ const mockUIHTML = `<!doctype html>
       box-shadow: 0 0 0 4px rgba(180, 35, 24, .1);
     }
     main {
-      max-width: 1180px;
+      max-width: 1216px;
       margin: 0 auto;
-      padding: 22px 20px 40px;
+      padding: 0 32px 28px;
+      border: 1px solid var(--line);
+      border-top: 0;
+      border-radius: 0 0 8px 8px;
+      background: var(--panel);
     }
     .summary {
-      color: var(--muted);
-      margin-bottom: 14px;
+      color: var(--text);
+      margin-bottom: 24px;
+      font-size: 18px;
+      font-weight: 720;
     }
     .metrics {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
+      display: flex;
+      overflow-x: auto;
+      gap: 20px;
+      margin-bottom: 38px;
+      padding-bottom: 2px;
     }
     .metric-card {
-      background: var(--panel);
+      position: relative;
+      flex: 0 0 248px;
+      background: #f8fafc;
       border: 1px solid var(--line);
       border-radius: 8px;
       box-shadow: var(--shadow);
-      padding: 14px;
+      padding: 22px;
       min-width: 0;
+      min-height: 96px;
+    }
+    .metric-card::after {
+      content: "";
+      position: absolute;
+      left: 22px;
+      bottom: 16px;
+      width: 92px;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--ok);
+    }
+    .metric-card:nth-child(2)::after {
+      width: 128px;
+      background: var(--accent);
+    }
+    .metric-card:nth-child(3)::after {
+      width: 78px;
+      background: #94a3b8;
+    }
+    .metric-card:nth-child(n+4)::after {
+      width: 146px;
+      background: var(--broker);
+    }
+    .metric-card.has-data::after {
+      display: none;
     }
     .metric-card h2 {
       margin: 0 0 10px;
-      font-size: 14px;
+      font-size: 17px;
       line-height: 1.2;
       font-weight: 760;
       letter-spacing: 0;
@@ -202,28 +241,29 @@ const mockUIHTML = `<!doctype html>
     }
     .metric-empty {
       color: var(--muted);
-      font-size: 13px;
+      font-size: 14px;
     }
     .grid {
       display: grid;
-      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 36px;
     }
     .endpoint {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
       box-shadow: var(--shadow);
-      padding: 16px;
+      padding: 20px;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 16px;
-      align-items: start;
+      grid-template-rows: minmax(150px, auto) auto;
+      gap: 18px;
+      min-height: 300px;
     }
     .meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 8px;
+      gap: 10px;
+      margin-bottom: 20px;
       align-items: center;
     }
     .badge {
@@ -231,30 +271,37 @@ const mockUIHTML = `<!doctype html>
       align-items: center;
       height: 24px;
       padding: 0 8px;
-      border-radius: 999px;
+      border-radius: 4px;
       background: var(--accent-soft);
-      color: #0b4dcc;
+      color: var(--accent);
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
     }
     .service {
-      background: #fff7ed;
+      background: var(--warn-soft);
       color: #9a3412;
     }
     .method {
-      background: #ecfdf3;
+      background: var(--ok-soft);
       color: var(--ok);
     }
     .path {
-      margin: 0 0 4px;
+      margin: 0 0 14px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 15px;
+      font-size: 22px;
+      font-weight: 720;
+      line-height: 1.25;
       overflow-wrap: anywhere;
     }
     .desc {
       margin: 0;
       color: var(--muted);
+      font-size: 14px;
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
     }
     .file {
       margin-top: 10px;
@@ -264,32 +311,47 @@ const mockUIHTML = `<!doctype html>
       overflow-wrap: anywhere;
     }
     .provenance {
-      margin-top: 12px;
+      margin-top: 18px;
       display: grid;
       gap: 4px;
-      color: var(--muted);
-      font-size: 12px;
+      color: var(--subtle);
+      font-size: 13px;
+    }
+    .provenance div {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .provenance span {
-      color: var(--text);
+      color: var(--subtle);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
     .control {
-      min-width: 260px;
       display: grid;
-      gap: 8px;
+      grid-template-columns: minmax(0, 1fr) 72px;
+      gap: 8px 12px;
+      align-items: end;
     }
     .control label {
-      color: var(--muted);
-      font-size: 12px;
+      grid-column: 1 / -1;
+      color: var(--text);
+      font-size: 13px;
       font-weight: 700;
-      text-transform: uppercase;
     }
     .control select {
       width: 100%;
-      padding: 0 10px;
+      height: 38px;
+      padding: 0 12px;
+    }
+    .control button {
+      height: 38px;
+      border-color: var(--text);
+      background: var(--text);
+      color: #fff;
     }
     .status {
+      grid-column: 1 / -1;
       min-height: 20px;
       color: var(--muted);
       font-size: 13px;
@@ -305,11 +367,20 @@ const mockUIHTML = `<!doctype html>
       background: #fff;
     }
     @media (max-width: 760px) {
-      .bar, .endpoint { grid-template-columns: 1fr; }
+      header {
+        margin: 12px;
+        padding: 0 18px;
+      }
+      main {
+        margin: 0 12px 12px;
+        padding: 0 18px 20px;
+      }
+      h1 { font-size: 28px; }
       .metrics { grid-template-columns: 1fr; }
       .toolbar { grid-template-columns: 1fr; align-items: stretch; }
       input { width: 100%; }
-      .control { min-width: 0; }
+      .grid { grid-template-columns: 1fr; gap: 16px; }
+      .control { grid-template-columns: minmax(0, 1fr) 72px; }
     }
   </style>
 </head>
@@ -582,7 +653,7 @@ const mockUIHTML = `<!doctype html>
     function metricCard(title, data) {
       const keys = Object.keys(data || {}).sort((a, b) => a.localeCompare(b));
       const rows = keys.map((key) => metricRow(key, data[key])).join("");
-      return '<article class="metric-card">' +
+      return '<article class="metric-card' + (rows ? " has-data" : "") + '">' +
         '<h2>' + escapeHtml(title) + '</h2>' +
         (rows ? '<div class="metric-list">' + rows + '</div>' : '<div class="metric-empty">No runtime calls yet</div>') +
       '</article>';
