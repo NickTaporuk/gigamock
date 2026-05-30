@@ -15,7 +15,7 @@ require (
 	github.com/nats-io/nats.go v1.37.0
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/segmentio/kafka-go v0.4.16
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.8.3
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.9.0
 	google.golang.org/grpc v1.49.0
